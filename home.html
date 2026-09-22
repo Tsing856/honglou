@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>红楼·物语</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="hint-ui">
+        <span id="guide-text">【第一步】轻触案上这本《紅樓物語》，翻开书页...</span>
+    </div>
+
+    <!-- 根目录总封面：纯净3D书本 -->
+    <div id="book-stage" class="chinese-desk-stage">
+        <div class="book-3d" id="book-entity">
+            <div class="book-side book-cover-front"></div>
+            <div class="book-side book-cover-back"></div>
+            <div class="book-spine"></div>
+        </div>
+    </div>
+
+    <!-- 剧情回顾（仅在后续带参 ?recap=1 时调用） -->
+    <div id="story-recap-stage" style="display:none;" aria-label="剧情回顾">
+        <div class="recap-paper-glow"></div>
+        <div class="recap-header">
+            <div class="recap-kicker">紅 樓 · 物 語</div>
+            <h2>剧情回顾</h2>
+            <p>三件旧物，三段前尘。轻触其一，重新走进那段被封存的记忆。</p>
+        </div>
+        <div class="recap-artifacts">
+            <button class="recap-artifact" data-chapter="baoyu">
+                <div class="artifact-image-wrap"><img src="image/baoyu_sketch.png" alt="通灵宝玉"></div>
+                <div class="artifact-name">通灵宝玉</div><div class="artifact-person">贾宝玉篇</div>
+                <div class="artifact-line">顽石入梦 · 富贵大梦</div>
+            </button>
+            <button class="recap-artifact" data-chapter="daiyu">
+                <div class="artifact-image-wrap"><img src="image/daiyu_sketch.png" alt="绛痕素帕"></div>
+                <div class="artifact-name">绛痕素帕</div><div class="artifact-person">林黛玉篇</div>
+                <div class="artifact-line">绛珠还泪 · 潇湘琴音</div>
+            </button>
+            <button class="recap-artifact" data-chapter="baochai">
+                <div class="artifact-image-wrap"><img src="image/baochai_sketch.png" alt="金锁"></div>
+                <div class="artifact-name">金锁</div><div class="artifact-person">薛宝钗篇</div>
+                <div class="artifact-line">金玉良缘 · 蘅芜幽梦</div>
+            </button>
+        </div>
+        <button id="recap-enter-map-btn" class="recap-map-btn">进入大观园全景 →</button>
+    </div>
+
+    <!-- 大观园全景 -->
+<div id="dagwanyuan-stage" style="display:none">
+    <div id="dagwanyuan-container">
+        <img id="dagwanyuan-map" src="image/screen0.jpg" alt="大观园全景图">
+        <div id="hotspot-1" class="map-hotspot" style="top:30%;left:30%">
+            <span class="hotspot-label">潇湘馆</span>
+        </div>
+        <div id="hotspot-2" class="map-hotspot" style="top:55%;left:70%">
+            <span class="hotspot-label">怡红院</span>
+        </div>
+    </div>
+    <div id="map-hint-ui">—— 点击大观园景致 探寻红楼余音 ——</div>
+
+    <!-- 新增：左下角返回剧情回顾按钮 -->
+    <button id="map-back-to-recap-btn">↩ 返回剧情回顾</button>
+</div>
+
+    <div id="map-video-stage" style="display:none">
+        <video id="map-video-A" class="map-video-player" playsinline></video>
+        <video id="map-video-B" class="map-video-player" playsinline></video>
+        <button id="back-to-map-btn" style="display:none">↩ 返回大观园全景</button>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const bookEntity = document.getElementById('book-entity');
+
+        if (bookEntity) {
+            bookEntity.addEventListener('click', () => {
+                // 去掉 3D 动画过渡与延迟，直接进入内页（宝玉篇）
+                window.location.href = './baoyu/index.html';
+            });
+        }
+    });
+    </script>
+    <script src="main.js"></script>
+</body>
+</html>

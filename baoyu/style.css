@@ -1,0 +1,1336 @@
+/* ================= 1. 全局初始化与基础舞台 ================= */
+* { box-sizing: border-box; }
+body, html {
+    margin: 0; padding: 0;
+    width: 100vw; height: 100vh;
+    overflow: hidden; background-color: #1a120e; 
+    font-family: "Noto Serif SC", "Source Han Serif CN", "SimSun", serif; 
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ================= 提示 UI：初始黑金质感（前三步使用） ================= */
+#hint-ui {
+    position: fixed; top: 4vh; left: 4vw;
+    color: #cbd5e1; 
+    /* 初始：保持第一步神秘、深邃的黑木半透明背景 */
+    background: rgba(25, 20, 18, 0.93); 
+    padding: 20px 30px; 
+    border-radius: 2px; 
+    border-left: 4px solid #a6846a; /* 初始黄铜/红木色边框 */
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6); 
+    pointer-events: none; 
+    font-size: 14px; line-height: 1.8; letter-spacing: 2px; z-index: 100;
+    backdrop-filter: blur(5px); 
+    /* 🔴 增加 transform 过渡，让切换风格时有丝滑的微调动画 */
+    transition: opacity 0.5s ease, background 0.6s ease, color 0.6s ease, border 0.6s ease;
+}
+
+/* 🌟 动态新增：最终视频漫游场景的宣纸淡青 UI 风格 */
+#hint-ui.scene-style {
+    width: 32vw; 
+    background: rgba(245, 241, 233, 0.94); /* 宣纸素绢白 */
+    color: #3a2c1e; /* 熟褐色字 */
+    border: 1px solid #9e846b;
+    border-left: 5px solid #6b7b6e; /* 淡青竹色边，完美融合画面 */
+    box-shadow: 0 12px 35px rgba(42, 31, 21, 0.12); 
+    font-family: "SimSun", "Noto Serif SC", serif;
+    font-weight: 500;
+}
+
+/* 最终幕点击道具后，弹出文字里的朱砂红标题 */
+#hint-ui.scene-style b {
+    color: #8c241e !important; 
+    font-size: 15px;
+    letter-spacing: 1px;
+    display: inline-block;
+    margin-bottom: 4px;
+}
+/* 🟢 修复：用纯代码（SVG矢量纹理）重新生成高质感红木桌面 */
+.chinese-desk-stage {
+    position: absolute; width: 100vw; height: 100vh; top: 0; left: 0;
+    display: flex; justify-content: center; align-items: center;
+    
+    /* 使用代码生成的红木微细木纹 */
+    background-color: #26140a;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100' height='100' fill='%23361c0e'/%3E%3Crect width='100' height='100' filter='url(%23noise)'/%3E%3C/svg%3E");
+    
+    /* 配合四周的烛光感暗角，让代码红木更逼真 */
+    box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.9); 
+}
+
+/* ================= 2. 书籍展示阶段（直接双页展开） ================= */
+#book-stage { z-index: 10; transition: opacity 1s ease, transform 1s ease; }
+
+.book-3d {
+    position: relative; 
+    width: 680px; /* 展开后的双页总宽度 */
+    height: 480px; 
+    cursor: pointer; 
+    box-shadow: 0px 35px 70px rgba(0, 0, 0, 0.8);
+}
+
+.book-pages-container {
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    background: #eedfca; 
+    display: flex; 
+    opacity: 1; /* 初始直接显示 */
+    border-radius: 2px;
+}
+
+.book-page-left, .book-page-right { 
+    flex: 1; 
+    height: 100%; 
+    padding: 40px 30px; 
+    background: #eedfca; 
+    position: relative; 
+}
+
+.book-page-right { 
+    border-left: 1px solid rgba(0, 0, 0, 0.08); 
+}
+
+.vertical-text { 
+    writing-mode: vertical-rl; 
+    height: 100%; 
+    font-size: 13px; 
+    line-height: 2.6; 
+    color: #443528; 
+    letter-spacing: 3px; 
+}
+
+/* 书本右侧线稿图容器 */
+.book-sketch-wrapper { 
+    width: 100%; 
+    height: 100%; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+}
+
+.baochai-book-sketch { 
+    width: 100%; 
+    height: auto; 
+    object-fit: contain; 
+    opacity: 0.75; 
+    filter: sepia(0.1); 
+}
+
+/* ================= 3. 线稿未唤醒 -> 照片水波蔓延（第三步） ================= */
+#awakening-stage { display: none; opacity: 0; z-index: 25; transition: opacity 1s ease; }
+
+/* 核心父容器：固定死尺寸，作为线稿和彩图的共同基准锚点 */
+.lock-container { 
+    position: relative; 
+    width: 380px; 
+    height: 540px; 
+    cursor: pointer; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+}
+
+/* 🟡 金色古典圆圈（仪式阵）：保持正圆，以父容器中心进行绝对居中 */
+.ritual-circle {
+    position: absolute; 
+    width: 108%; 
+    height: 106%; 
+    border: 2px dashed rgba(212, 175, 55, 0.4); 
+    border-radius: 50%; 
+    box-shadow: 0 0 25px rgba(212, 175, 55, 0.2), inset 0 0 20px rgba(212, 175, 55, 0.15); 
+    z-index: 1;
+    animation: rotateCircle 20s linear infinite; 
+    transition: opacity 0.8s ease, transform 0.8s ease; 
+}
+.ritual-circle::before {
+    content: ""; position: absolute; top: -6px; left: -6px; right: -6px; bottom: -6px;
+    border: 1px solid rgba(212, 175, 55, 0.15); border-radius: 50%;
+    animation: circlePulse 3s ease-in-out infinite alternate;
+}
+
+/* 🎯 绝对居中线稿层：通过数学中心点定位，确保与彩色照片、金色圆圈的圆心死死锁定 */
+.lock-sketch { 
+    position: absolute; 
+    top: 50%; 
+    left: 50%;
+    transform: translate(-50%, -50%); /* 依靠这个实现绝对对齐，线稿再小也不会位移 */
+    width: 100%; 
+    height: 100%; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center; 
+    transition: opacity 1.2s ease; 
+    z-index: 2; 
+}
+
+/* 🎯 关键修改：进一步缩小线稿图的渲染尺寸（当前设定为 65%） */
+.awakening-img-sketch { 
+    width: 100%;              /* 🟢 如果觉得还不够小，可以继续改小成 60% 或 55% */
+    height: 100%;             /* 🟢 高度同步保持 65% */
+    object-fit: contain;     /* 🟢 保持线稿原图完整比例，绝不拉伸错位 */
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4)); 
+}
+
+/* 提示文字绝对定位在最底部，完全不参与弹性盒布局，绝不顶开或挤压线稿图的位置 */
+.sketch-text { 
+    position: absolute;
+    bottom: 35px;      
+    left: 50%;
+    transform: translateX(-50%); 
+    color: #baa185; 
+    font-size: 14px; 
+    letter-spacing: 4px; 
+    text-shadow: 0 2px 4px rgba(0,0,0,0.6); 
+    font-family: "SimSun", serif; 
+    white-space: nowrap; 
+}
+
+/* 🎯 关键修复：让唤醒后的全彩全身照片图层【绝对定位】完美叠在线稿正上方 */
+.lock-colored { 
+    position: absolute; 
+    top: 0; left: 0;
+    width: 100%; 
+    height: 100%; 
+    opacity: 0; 
+    z-index: 3; 
+    transition: opacity 0.4s ease, filter 1.5s ease; 
+    filter: drop-shadow(0 0 0px rgba(212, 175, 55, 0)); 
+}
+/* 强制 SVG 容器无缝占满 */
+.mask-svg-container { 
+    width: 100%; 
+    height: 100%; 
+    display: block;
+}
+#mask-circle { transition: r 2.5s cubic-bezier(0.1, 0.8, 0.25, 1); }
+
+/* ✨ 彩色激活：触发神性外发光效果 */
+.lock-colored.bleed-active { 
+    opacity: 1; 
+    filter: drop-shadow(0 0 25px rgba(226, 182, 100, 0.75)) drop-shadow(0 0 50px rgba(212, 175, 55, 0.4)); 
+}
+
+/* ================= 3.5 新增：第三步专属动画效果 ================= */
+@keyframes rotateCircle { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes circlePulse { 0% { transform: scale(0.98); opacity: 0.3; } 100% { transform: scale(1.02); opacity: 0.8; } }
+
+/* ================= 4. 云雾粒子转场 ================= */
+#fog-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 1000; display: none; }
+.true-fog-shroud {
+    position: absolute; width: 140vw; height: 140vh; top: -20vh; left: -20vw;
+    background: radial-gradient(circle, rgba(245,242,235,0.96) 0%, rgba(232,225,212,0.7) 45%, rgba(26,18,14,0) 70%);
+    filter: url(#true-fog-filter); opacity: 0; transform: scale(0.5); 
+}
+#fog-overlay.fog-active { display: block; }
+#fog-overlay.fog-active .mist-layer-1 { animation: gatherAndDissolve1 5s cubic-bezier(0.25, 1, 0.3, 1) forwards; }
+#fog-overlay.fog-active .mist-layer-2 { animation: gatherAndDissolve2 5.2s cubic-bezier(0.25, 1, 0.3, 1) forwards; }
+#fog-overlay.fog-active .mist-layer-3 { animation: gatherAndDissolve3 4.8s cubic-bezier(0.25, 1, 0.3, 1) forwards; }
+
+@keyframes gatherAndDissolve1 {
+    0% { transform: scale(0.3) rotate(0deg); opacity: 0; }
+    25% { transform: scale(1.1) rotate(15deg); opacity: 0.98; }
+    65% { transform: scale(1.15) rotate(25deg); opacity: 0.98; }
+    100% { transform: scale(1.8) rotate(60deg); opacity: 0; }
+}
+@keyframes gatherAndDissolve2 {
+    0% { transform: scale(0.4) rotate(90deg); opacity: 0; }
+    28% { transform: scale(1.05) rotate(60deg); opacity: 0.95; }
+    62% { transform: scale(1.1) rotate(45deg); opacity: 0.95; }
+    100% { transform: scale(1.7) rotate(-20deg); opacity: 0; }
+}
+@keyframes gatherAndDissolve3 {
+    0% { transform: scale(0.2) rotate(-45deg); opacity: 0; }
+    24% { transform: scale(1.2) rotate(0deg); opacity: 0.9; }
+    68% { transform: scale(1.25) rotate(10deg); opacity: 0.9; }
+    100% { transform: scale(1.9) rotate(40deg); opacity: 0; }
+}
+
+/* ================= 5. 大场景横轴漫游（3D视频 + 人物交互版） ================= */
+#scene-stage { 
+    position: absolute; width: 100vw; height: 100vh; top: 0; left: 0; 
+    display: none; opacity: 0; transition: opacity 2.2s ease; z-index: 5; 
+    background-color: #000;
+}
+#viewport { 
+    position: relative; width: 100%; height: 100%; overflow: hidden;
+    perspective: 1000px; 
+    perspective-origin: center center;
+}
+#scroll-container { 
+    position: absolute; width: 100vw; height: 100vh; left: 0; top: 0; 
+    transform-style: preserve-3d; transition: none; 
+}
+.layer-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+#scene-video { width: 110vw; height: 110vh; object-fit: cover; transform: translate(-4.5%, -4.5%); }
+
+/* 🎯 薛宝钗人物透明点击热区：根据画面人物位置精确悬浮于正中心 */
+/* 🎯 薛宝钗人物透明点击热区：校准 3D 三维深度层级 */
+/* 🎯 薛宝钗人物绝对隐形交互热区 */
+.person-hotspot {
+    position: absolute;
+    left: 41vw;       
+    top: 32vh;        
+    width: 18vw;      
+    height: 55vh;
+    z-index: 10;      /* 保持在最前层，确保 3D 漫游位移后依然能点中 */
+    cursor: pointer;
+    
+    /* 🎨 保持完全透明，不加任何背景色与阴影 */
+    background: transparent; 
+    
+    transform-style: preserve-3d;
+    transform: translateZ(100px); 
+    
+    /* 🟢 彻底移除了 transition 和 :hover 的金光/发光代码，使其完全无痕化 */
+}
+/* 调试小技巧：如果你不确定有没有点准她，可以把下面的注释打开，这样鼠标悬停时她会有一个淡淡的发光轮廓 */
+/* .person-hotspot:hover { background: rgba(226, 182, 100, 0.05); box-shadow: inset 0 0 20px rgba(226, 182, 100, 0.2); } */
+
+/* 🌟 古典宣纸挂签样式 */
+.interactive-element { position: absolute; cursor: pointer; user-select: none; }
+.props { 
+    writing-mode: vertical-rl;
+    padding: 18px 10px 14px 10px; 
+    background: rgba(246, 241, 231, 0.88); 
+    color: #4a3319; 
+    font-size: 13px; 
+    font-family: "SimSun", "Noto Serif SC", serif;
+    font-weight: bold;
+    letter-spacing: 5px;
+    border: 1px solid #a68c6d;
+    outline: 1px solid #a68c6d;
+    outline-offset: -4px; 
+    z-index: 3; 
+    box-shadow: 0 8px 25px rgba(42, 31, 21, 0.15);
+    transform-style: preserve-3d;
+    transform: translateZ(90px); 
+    animation: propInkGlow 4s ease-in-out infinite alternate;
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.3, 1);
+}
+.props:hover {
+    color: #8c241e; 
+    border-color: #8c241e;
+    outline-color: #8c241e;
+    background: rgba(253, 251, 247, 0.98);
+    transform: translateZ(120px) translateY(-8px);
+    box-shadow: 0 15px 35px rgba(140, 36, 30, 0.25);
+}
+
+/* 挂签物理坐标微调 */
+#prop-tea { left: 20vw; bottom: 38vh; }
+#prop-books { left: 70vw; bottom: 34vh; }
+
+@keyframes propInkGlow {
+    0% { box-shadow: 0 8px 20px rgba(42, 31, 21, 0.15); border-color: #a68c6d; }
+    100% { box-shadow: 0 8px 30px rgba(166, 140, 109, 0.35); border-color: #cbaf8d; }
+}
+
+/* ================= 6. 阶梯式提示框扩展样式 ================= */
+#hint-ui.scene-style {
+    width: 32vw; 
+    background: rgba(245, 241, 233, 0.94); 
+    color: #3a2c1e; 
+    border: 1px solid #9e846b;
+    border-left: 5px solid #6b7b6e; 
+    box-shadow: 0 12px 35px rgba(42, 31, 21, 0.12); 
+    font-family: "SimSun", "Noto Serif SC", serif;
+    font-weight: 500;
+}
+#hint-ui.scene-style b {
+    color: #8c241e !important; 
+    font-size: 15px;
+    letter-spacing: 1px;
+    display: inline-block;
+    margin-bottom: 4px;
+}
+/* ================= 7. 最终校准：第一张图剧情与对话框样式 ================= */
+#story-stage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 999;                  /* 提到最高层，绝对防止被任何漫游背景遮挡 */
+    
+    /* 初始彻底隐藏并且透明，只有添加 active 后才在纯黑背景上淡入 */
+    display: none;                 
+    opacity: 0;                    
+    
+    pointer-events: none;          /* 未触发时不干扰键盘漫游 */
+    background: #000000;           /* 作为大雾散去、场景交替的纯黑底色 */
+    transition: opacity 1.5s ease-in-out; /* 1.5秒丝滑淡入过渡 */
+}
+
+/* 核心修复：确保 active 被激活时，不仅显示，还要打开点击判定 */
+#story-stage.active {
+    display: block;                
+    pointer-events: auto;          
+}
+
+#story-bg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;             
+}
+
+/* ⛩️ 古风一体化对话框基座 (保持原外观不变，仅加入了出场延迟动画) */
+#dialogue-box {
+    position: absolute;
+    bottom: 4vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 55vw;
+    height: 12vh;
+    min-height: 150px;
+    background: rgba(246, 242, 234, 0.95);
+    border: 3px solid #3a2212;     
+    outline: 1px solid #9e846b;    
+    outline-offset: -5px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+    padding: 20px 50px;
+    font-family: "SimSun", "Noto Serif SC", serif;
+    z-index: 1000;                 
+    
+    /* 初始处于透明并向下偏 20px。等待背景图亮起时延迟升起 */
+    opacity: 0;
+    transform: translate(-50%, 20px);
+    transition: opacity 1s ease 0.8s, transform 1s cubic-bezier(0.25, 1, 0.3, 1) 0.8s; /* 延迟0.8秒升起 */
+}
+
+/* 当剧情场景完全加载，配合 JS 加上 fade-in 类名时，对话框浮现 */
+#story-stage.fade-in #dialogue-box {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+/* 讲话者名字标签 */
+#dialogue-name {
+    position: absolute;
+    top: -18px;
+    left: 35px;
+    background: #8c241e;   /* 默认宝钗的朱砂红 */
+    color: #f6f2ea;               
+    padding: 5px 22px;
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    border: 1px solid #3a2212;
+    transition: background 0.4s ease; /* 换人说话时，名字框颜色能丝滑渐变 */
+}
+
+/* 修改对话核心文本区：支持渲染出更漂亮的旁白特效 */
+#dialogue-text {
+    color: #2c1e13;               
+    font-size: 19px;
+    line-height: 1.8;
+    letter-spacing: 2px;
+    font-weight: 500;
+    text-align: left;
+    transition: opacity 0.2s ease, color 0.3s ease;
+}
+
+/* 让剧本里括号内的动作神态描写变成淡淡的水墨灰色，台词保持黑色，主次极其分明！ */
+#dialogue-text br + br {
+    display: block;
+    content: "";
+    margin-top: -5px;
+}
+
+/* 🖋️ 右下角提示按键 */
+#dialogue-next-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 25px;
+    cursor: pointer;
+    color: #8c241e;               
+    font-size: 18px;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px dashed rgba(140, 36, 30, 0.5);
+    border-radius: 50%;
+    z-index: 1001;                 
+    animation: dialogArrowPulse 1.2s ease-in-out infinite alternate;
+}
+
+#dialogue-next-btn:hover {
+    transform: scale(1.15);
+    background: rgba(140, 36, 30, 0.08);
+}
+
+@keyframes dialogArrowPulse {
+    0% { opacity: 0.4; transform: translateY(0); }
+    100% { opacity: 1; transform: translateY(4px); }
+}
+
+/* ================= 8. 采集花卉与古法制脂小游戏 ================= */
+#catch-butterfly-stage {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: #110c0a; 
+    z-index: 1000;
+    display: none; opacity: 0;
+    transition: opacity 1.0s ease;
+}
+#catch-butterfly-stage.active {
+    display: block; opacity: 1;
+}
+
+/* 🏺 器皿基础容器 */
+.perfume-vessel {
+    position: absolute;
+    bottom: 12vh;
+    width: 14vw;
+    height: 22vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease;
+    cursor: pointer;
+}
+.perfume-vessel:hover {
+    transform: translateY(-8px) scale(1.05);
+    filter: drop-shadow(0 15px 25px rgba(161, 61, 55, 0.3));
+}
+
+/* 贴合位置排布：左、中、右分布在案台上 */
+.vessel-basin { left: 18vw; }
+.vessel-bowl  { left: 43vw; }
+.vessel-dish  { left: 68vw; }
+
+/* SVG 画布自适应 */
+.vessel-svg {
+    width: 100%;
+    height: 80%;
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));
+}
+
+/* 🏷️ 标签文字：小楷毛笔风 */
+.vessel-label {
+    margin-top: 5px;
+    color: #ebdcc5;
+    font-family: "SimSun", "Noto Serif SC", serif;
+    font-size: 14px;
+    letter-spacing: 2px;
+    background: rgba(40, 30, 25, 0.7);
+    padding: 3px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(166, 132, 106, 0.3);
+}
+
+/* 🌊 动画 1: 青瓷盆中清水泛起粼粼微波 */
+.water-wave-effect {
+    animation: waterRipple 3s ease-in-out infinite alternate;
+    transform-origin: center;
+}
+@keyframes waterRipple {
+    0% { transform: scale(1) rotate(0deg); opacity: 0.65; fill: rgba(142, 197, 199, 0.65); }
+    50% { transform: scale(1.02) rotate(0.5deg); opacity: 0.8; fill: rgba(132, 187, 194, 0.75); }
+    100% { transform: scale(0.98) rotate(-0.5deg); opacity: 0.65; fill: rgba(142, 197, 199, 0.65); }
+}
+
+/* 🔨 动画 2: 研杵捣动动画 (当制脂进度处于对应阶段时可加速，默认慢速呼吸) */
+/* 研钵药杵 —— 点击前默认静止，点击时才研磨 */
+.pestle-anim { animation: none !important; transform-origin: 50px 35px; }
+
+@keyframes pestleThump {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    50% { transform: translate(-3px, 4px) rotate(-8deg); }
+    100% { transform: translate(1px, -2px) rotate(4deg); }
+}
+
+/* 💄 动画 3: 胭脂膏体色泽莹润 */
+.rouge-paste-glow {
+    animation: rougeGlow 2s ease-in-out infinite alternate;
+}
+@keyframes rougeGlow {
+    0% { fill: #a33232; filter: drop-shadow(0 0 2px rgba(255, 100, 100, 0.2)); }
+    100% { fill: #ca4a4a; filter: drop-shadow(0 0 8px rgba(255, 100, 100, 0.5)); }
+}
+
+/* 顶部进度条美化 */
+#perfume-progress-bar {
+    position: absolute;
+    top: 5vh; left: 50%;
+    transform: translateX(-50%);
+    width: 40vw; height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1.5px solid rgba(166, 132, 106, 0.4);
+}
+#perfume-progress-fill {
+    width: 0%; height: 100%;
+    background: linear-gradient(90deg, #d46b6b, #a13d37);
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px rgba(161, 61, 55, 0.6);
+}
+/* ==========================================================================
+   🎬 关卡黑幕过渡专区（点击手型）
+   ========================================================================== */
+#curtain-call-stage {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #000000; 
+    z-index: 9999;       
+    display: flex; flex-direction: column; 
+    justify-content: center; align-items: center;
+    opacity: 0; pointer-events: none;
+    cursor: pointer; 
+    transition: opacity 3.0s ease; 
+}
+#curtain-call-stage.active { opacity: 1; pointer-events: auto; }
+.curtain-text {
+    color: #ffffff; font-family: "Noto Serif SC", "SimSun", serif; font-size: 1.4rem;
+    letter-spacing: 4px; line-height: 2.2; text-align: center; max-width: 80%; opacity: 0;
+    transform: translateY(20px); transition: all 2.5s ease 1.5s; 
+}
+.curtain-tip {
+    color: #c93b3b; font-family: "Noto Serif SC", "SimSun", serif; font-size: 0.9rem;
+    letter-spacing: 2px; margin-top: 40px; opacity: 0; transition: opacity 2.0s ease 3.5s; 
+}
+#curtain-call-stage.active .curtain-text { opacity: 0.85; transform: translateY(0); }
+#curtain-call-stage.active .curtain-tip { opacity: 0.8; }
+
+/* ==========================================================================
+   ↩️ 左下角中式古典【纯形状】返回键（完美SVG形状硬核修正版）
+   ========================================================================== */
+.back-shape-btn {
+    position: absolute;
+    bottom: 4vh;                  /* 完美固定在左下角 */
+    left: 4vw;
+    width: 44px;                  /* 略微微调尺寸更加大气 */
+    height: 44px;
+    background: rgba(25, 20, 18, 0.88);
+    border: 1px solid rgba(166, 132, 106, 0.35);
+    border-left: 3px solid #8c241e; /* 典雅红木包边 */
+    border-radius: 4px;
+    cursor: pointer;
+    z-index: 2500;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    
+    /* 🌟 核心修正：利用 SVG 绘制完美中式折线返回箭头，确保永不走样 */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ebdcc5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14L4 9l5-5'/%3E%3Cpath d='M20 20v-7a4 4 0 0 0-4-4H4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 20px 20px;   /* 箭头大小居中比例完美 */
+}
+
+/* 悬停动效：背景亮起，箭头变成纯白色 */
+.back-shape-btn:hover {
+    background-color: #8c241e;
+    border-color: #8c241e;
+    transform: scale(1.08);
+    box-shadow: 0 12px 30px rgba(140,36,30,0.5);
+    /* 悬停时把 SVG 的颜色切换成纯白 */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14L4 9l5-5'/%3E%3Cpath d='M20 20v-7a4 4 0 0 0-4-4H4'/%3E%3C/svg%3E");
+}
+
+/* 适配 3D 漫游长卷舞台，确保在滚动时依然稳稳吸附在左下角 */
+#scene-stage .back-shape-btn {
+    position: fixed;
+}
+
+/* 悬停时的古典红木高亮动效 */
+.back-shape-btn:hover {
+    background: #8c241e;
+    border-color: #8c241e;
+    transform: scale(1.08);
+    box-shadow: 0 12px 30px rgba(140,36,30,0.5);
+}
+.back-shape-btn:hover::before,
+.back-shape-btn:hover::after {
+    border-color: #ffffff;        /* 悬停时形状变白亮起 */
+}
+
+/* 适配 3D 漫游长卷舞台，确保在全景滑动中死死固定在左下角不随屏移动 */
+#scene-stage .back-shape-btn {
+    position: fixed;
+}
+
+/* 适配小游戏阶段，确保返回键浮在最上层，不被花朵/蝴蝶挡住 */
+#catch-butterfly-stage .back-shape-btn {
+    position: absolute;
+    z-index: 3000; /* 极高层级 */
+}
+
+/* ==========================================================================
+   🎨 纯代码奢华国风调香案台与粒子系统
+   ========================================================================== */
+
+/* 1. 纯代码生成的调香玉案背景（替代原有的外部图片） */
+#catch-butterfly-stage {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    /* 采用宣纸微焦色到深檀木色的古风渐变底色 */
+    background: radial-gradient(circle at 50% 80%, #2e221b 0%, #140e0b 100%);
+    overflow: hidden;
+}
+
+/* 2. 用代码手绘一个具有立体阴影的复古黑檀木案台 */
+#catch-butterfly-stage::before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 5%;
+    width: 90%;
+    height: 45vh;
+    /* 檀木纹理渐变 */
+    background: linear-gradient(to bottom, #3d2b20 0%, #261a13 20%, #120c09 100%);
+    border-radius: 40px 40px 0 0;
+    box-shadow: 
+        0 -15px 50px rgba(0, 0, 0, 0.8),
+        inset 0 4px 0 rgba(235, 220, 197, 0.15); /* 案台边缘微弱的木质高光 */
+    z-index: 1;
+}
+
+/* 3. 精致雕花铜镜流光热区（纯代码镂空与旋转金线） */
+.perfume-classical-target {
+    position: absolute;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #ebdcc5;
+    font-family: "Noto Serif SC", "SimSun", serif;
+    z-index: 10;
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    background: radial-gradient(circle, rgba(140, 36, 30, 0.3) 0%, rgba(20, 15, 12, 0.85) 75%);
+    border: 1px solid rgba(235, 220, 197, 0.35);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6), inset 0 0 20px rgba(235, 220, 197, 0.1);
+}
+
+/* 旋转缠绕的金线效果 */
+.perfume-classical-target::before {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, transparent, rgba(235, 220, 197, 0.7), transparent) border-box;
+    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: goldRotate 3.5s linear infinite;
+}
+
+.perfume-classical-target:hover {
+    transform: scale(1.1) translateY(-5px);
+    border-color: rgba(235, 220, 197, 0.8);
+    background: radial-gradient(circle, rgba(140, 36, 30, 0.5) 0%, rgba(20, 15, 12, 0.95) 75%);
+    box-shadow: 0 20px 40px rgba(140, 36, 30, 0.4), inset 0 0 25px rgba(235, 220, 197, 0.2);
+}
+
+/* 4. 纯代码手绘的三具古法调香实体器皿（取代背景图中的盆、碗、碟） */
+.perfume-vessel {
+    position: absolute;
+    border-radius: 50%;
+    z-index: 2;
+    transition: all 0.5s ease;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.7);
+}
+/* 左侧：青铜淘洗盆 */
+.vessel-basin {
+    left: 23vw; bottom: 12vh; width: 140px; height: 70px;
+    background: linear-gradient(to bottom, #2d4030, #152117);
+    border: 3px solid #4a634f; border-radius: 50% 50% 40% 40%;
+}
+/* 中间：黑瓷研磨碗 */
+.vessel-bowl {
+    left: 46vw; bottom: 18vh; width: 150px; height: 90px;
+    background: linear-gradient(135deg, #1f1f1f, #0a0a0a);
+    border: 2px solid #333; border-radius: 50% 50% 45% 45%;
+    box-shadow: 0 25px 45px rgba(0,0,0,0.8), inset 0 10px 20px rgba(255,255,255,0.05);
+}
+/* 右侧：描金清蜜碟 */
+.vessel-dish {
+    left: 69vw; bottom: 10vh; width: 130px; height: 50px;
+    background: linear-gradient(to bottom, #61462b, #332111);
+    border: 2px solid #916c43; border-radius: 50%;
+}
+
+/* 5. 纯代码点击引爆的花瓣粒子动画 */
+.flower-burst-particle {
+    position: absolute;
+    pointer-events: none;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ffb3c6 0%, #8c241e 70%, transparent 100%);
+    animation: burstOut 0.7s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+    z-index: 100;
+}
+
+/* 6. 顶部的优雅古风调香进度条 */
+#perfume-progress-bar {
+    position: absolute;
+    top: 12vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    height: 3px;
+    background: rgba(235, 220, 197, 0.15);
+    border-radius: 2px;
+    z-index: 10;
+}
+#perfume-progress-fill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(to right, #ebdcc5, #8c241e);
+    box-shadow: 0 0 8px #ebdcc5;
+    transition: width 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@keyframes goldRotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+@keyframes burstOut {
+    0% { width: 0px; height: 0px; opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { width: 140px; height: 140px; opacity: 0; transform: translate(-50%, -50%) scale(1.4); filter: blur(3px); }
+}
+
+/* ==========================================================================
+   🏺 纯净局部器物真身发光（不生硬、不波及全图）
+   ========================================================================== */
+
+/* 局部发光层的基础共有属性 */
+.local-glow-element {
+    position: absolute;
+    cursor: pointer;
+    z-index: 15;
+    opacity: 0; /* 平时完全隐形 */
+    transition: opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    pointer-events: auto;
+}
+
+/* 1. 胭脂盒局部：使用高度契合胭脂盒轮廓的椭圆形红色渐变宝光 */
+.glow-rouge-box {
+    /* 采用高斯模糊，让红色的光晕完美融入背景中的红木盒 */
+    background: radial-gradient(circle, rgba(140, 36, 30, 0.75) 0%, rgba(140, 36, 30, 0.3) 50%, rgba(0,0,0,0) 80%);
+    filter: blur(8px);
+    border-radius: 50%; /* 椭圆形轮廓 */
+}
+
+/* 悬停时：胭脂盒位置局部亮起 */
+.glow-rouge-box:hover {
+    opacity: 1; /* 丝滑显现红色局部宝光 */
+}
+
+/* 2. 宣纸局部：使用契合宣纸书卷的琥珀色温暖渐变宝光 */
+.glow-desk-paper {
+    background: radial-gradient(ellipse, rgba(235, 220, 197, 0.8) 0%, rgba(212, 175, 55, 0.25) 60%, rgba(0,0,0,0) 80%);
+    filter: blur(10px);
+    border-radius: 12px; /* 契合纸张的微圆角轮廓 */
+}
+
+/* 悬停时：宣纸位置局部亮起 */
+.glow-desk-paper:hover {
+    opacity: 1; /* 丝滑显现金色局部宝光 */
+}
+
+/* 3. 人物局部：使用高挑的椭圆暖白玉色（或冷翡翠色）渐变仙光 */
+.glow-character {
+    /* 采用高斯模糊，让温润的灵气白光完美将宝玉真身裹住 */
+    background: radial-gradient(ellipse at center, rgba(230, 217, 180, 0.65) 0%, rgba(166, 132, 106, 0.25) 50%, rgba(0,0,0,0) 80%);
+    filter: blur(12px); /* 稍大一点的模糊，体现仙气升腾 */
+    border-radius: 50% / 60% 60% 40% 40%; /* 营造出头窄身宽的修长罩子轮廓 */
+}
+
+/* 悬停时：人物本体位置局部散发莹莹宝光 */
+.glow-character:hover {
+    opacity: 1; /* 丝滑显现 */
+}
+
+/* ==========================================================================
+   🏺 终极修复：防塌陷、防遮挡、最高优先级纯代码器皿样式
+   ========================================================================== */
+#catch-butterfly-stage {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: radial-gradient(circle at 50% 50%, #291a15 0%, #0f0a08 100%) !important; 
+    z-index: 99999 !important; /* 确保在最顶层，挡住所有长卷元素 */
+    display: none;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+/* 激活状态 */
+#catch-butterfly-stage.active {
+    display: block !important;
+    opacity: 1 !important;
+}
+
+/* 🏺 三个器皿容器：改用 px 固定尺寸，彻底防止高宽塌陷为0 */
+.perfume-vessel {
+    position: absolute !important;
+    bottom: 18vh !important;
+    width: 160px !important;   /* 固定宽度，防缩水 */
+    height: 220px !important;  /* 固定高度，防塌陷 */
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    cursor: pointer !important;
+    z-index: 100005 !important; /* 极高层级，保证看得见、点得到 */
+    opacity: 1 !important;
+    visibility: visible !important;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+
+.perfume-vessel:hover {
+    transform: translateY(-10px) scale(1.05) !important;
+}
+
+/* 靠百分比精准平分布局 */
+.vessel-basin { left: 15vw !important; }
+.vessel-bowl  { left: 45vw !important; transform: translateX(-50%) !important; }
+.vessel-dish  { right: 15vw !important; }
+
+/* 强制 SVG 显形 */
+.vessel-svg {
+    width: 130px !important;
+    height: 130px !important;
+    display: block !important;
+    filter: drop-shadow(0 15px 25px rgba(0,0,0,0.8)) !important;
+    overflow: visible !important;
+}
+
+/* 器皿文字标签 */
+.vessel-label {
+    margin-top: 15px !important;
+    color: #ebdcc5 !important;
+    font-family: "SimSun", serif !important;
+    font-size: 14px !important;
+    white-space: nowrap !important;
+    letter-spacing: 2px !important;
+    background: rgba(45, 30, 25, 0.95) !important;
+    padding: 5px 16px !important;
+    border-radius: 20px !important;
+    border: 1px solid rgba(166, 132, 106, 0.4) !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important;
+}
+
+/* 🌊 动画1：淘洗盆水流微波 */
+.water-wave-effect { animation: waterRipple 3s ease-in-out infinite alternate; transform-origin: center; }
+@keyframes waterRipple { 0% { transform: scale(1); opacity: 0.65; } 100% { transform: scale(1.05); opacity: 0.9; } }
+
+/* 🔨 动画2：研钵药杵敲击 
+.pestle-anim { animation: pestleThump 2s ease-in-out infinite alternate; transform-origin: 50px 35px; }*/
+@keyframes pestleThump { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(-3px, 5px) rotate(-8deg); } }
+
+/* 💄 动画3：装胭脂玉盒的膏体光泽 */
+.rouge-paste-glow { animation: rougeGlow 2s ease-in-out infinite alternate; }
+@keyframes rougeGlow { 0% { fill: #a33232; } 100% { fill: #e04a4a; filter: drop-shadow(0 0 10px rgba(255,80,80,0.5)); } }
+
+/* 进度条与飘落容器置顶 */
+#perfume-progress-bar { z-index: 100010 !important; }
+#butterfly-container { position: absolute; top:0; left:0; width:100vw; height:100vh; z-index: 100008 !important; pointer-events: none; }
+.butterfly { pointer-events: auto; }
+#catch-toast-ui { z-index: 100020 !important; }
+
+/* ========================================================== */
+/* 🌟 专为小游戏舞台器皿与花瓣显形修复（不影响前面任何关卡） 🌟 */
+/* ========================================================== */
+
+/* 1. 确保小游戏舞台本身可见，且拥有正确的堆叠顺序 */
+#catch-butterfly-stage {
+    z-index: 8000 !important; /* 确保在最上层 */
+}
+
+/* 2. 核心修复：防止容器内的 SVG 被 Flex 挤压成 0 像素 */
+.perfume-vessel {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    z-index: 8500 !important;
+    pointer-events: auto !important; /* 确保能被点击 */
+}
+
+/* 3. 强制给 SVG 设定固定比例，并阻止其收缩 */
+.vessel-svg {
+    width: 120px !important;    /* 强制固定宽度 */
+    height: 120px !important;   /* 强制固定高度 */
+    flex-shrink: 0 !important;  /* 🔥 极其重要：防止 flex 弹性收缩导致器皿高度变 0 隐形 */
+    display: block !important;
+    overflow: visible !important;
+}
+
+/* 4. 确保器皿标签文字正常显示，不挤压器皿 */
+.vessel-label {
+    flex-shrink: 0 !important;  /* 防止标签自身变形 */
+    white-space: nowrap !important;
+    margin-top: 10px !important;
+    z-index: 8600 !important;
+}
+
+#butterfly-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 8050 !important;   /* 层级定在小游戏舞台内部的上方 */
+    pointer-events: none;       /* 🌟 极其核心：容器自身不拦截点击，让点击能穿透进去 */
+    overflow: hidden;
+}
+
+/* 5. 确保花瓣（红茉莉）绝对可见，且在最顶层，可被点击 */
+.butterfly {
+    position: absolute !important;
+    width: 36px !important;
+    height: 36px !important;
+    background: radial-gradient(circle, #ff6b6b 0%, #c92a2a 80%) !important;
+    border-radius: 50% 0 50% 50% !important; /* 经典不对称花瓣状 */
+    box-shadow: 0 4px 12px rgba(197, 42, 42, 0.8) !important;
+    cursor: pointer !important;
+    z-index: 9000 !important; /* 必须高于器皿，否则点不到 */
+    pointer-events: auto !important;
+}
+
+/* 6. 确保进度条在小游戏期间不会被压在红木背景下方 */
+#perfume-progress-bar {
+    z-index: 8700 !important;
+}
+
+@keyframes fallAndSway {
+    0% {
+        top: -5vh;
+        transform: translateX(0) rotate(0deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        top: 105vh; /* 落出屏幕底部 */
+        transform: translateX(50px) rotate(360deg); /* 带有位移和旋转 */
+        opacity: 0;
+    }
+}
+
+/* ==========================================================================
+   🌟 视觉升级：游戏提示 UI 与 进度条美化 (直接追加在最底部)
+   ========================================================================== */
+#catch-toast-ui {
+    position: absolute;
+    top: 4vh;
+    left: 4vw;
+    width: 280px;
+    background: rgba(245, 244, 238, 0.95) !important; 
+    border: 2px solid #8c241e !important;
+    border-left: 6px solid #8c241e !important; 
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), inset 0 0 20px rgba(140, 36, 30, 0.05);
+    padding: 15px 20px !important;
+    border-radius: 4px;
+    z-index: 8500 !important;
+    transition: all 0.4s ease;
+    pointer-events: none;
+}
+
+#toast-title {
+    font-size: 16px !important;
+    font-weight: bold !important;
+    color: #8c241e !important;
+    margin-bottom: 6px !important;
+    letter-spacing: 2px !important;
+    border-bottom: 1px dashed rgba(140, 36, 30, 0.3);
+    padding-bottom: 4px;
+}
+
+#toast-content {
+    font-size: 13px !important;
+    color: #2c2523 !important;
+    line-height: 1.6 !important;
+    letter-spacing: 1px !important;
+}
+
+#perfume-progress-bar {
+    position: absolute;
+    bottom: 6vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40vw;
+    height: 16px !important; 
+    background: rgba(44, 18, 16, 0.8) !important;
+    border: 2px solid #d4af37 !important; 
+    border-radius: 10px !important;
+    padding: 2px !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    z-index: 8500 !important;
+    overflow: hidden;
+}
+
+#perfume-progress-fill {
+    height: 100% !important;
+    width: 0%;
+    background: linear-gradient(90deg, #e63946, #b7094c, #e63946) !important;
+    background-size: 200% 100% !important;
+    animation: progressGlow 2s linear infinite !important;
+    border-radius: 6px !important;
+    transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;
+    box-shadow: 0 0 10px #ff4d6d;
+}
+
+@keyframes progressGlow {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
+/* 悬停状态类名与飞入状态类名 */
+.butterfly.is-flying {
+    pointer-events: none !important;
+}
+/* ==========================================================================
+   ✨ 真正对齐一三号：让第二个器皿（研钵）实现纯原地、无位移的内敛发光效果
+   ========================================================================== */
+
+/* 1. 强行锁定二号大容器的位置，剥离任何导致其晃动或浮起的 transform 属性 */
+#vessel-second {
+    transform: none !important;
+    transition: none !important;
+    cursor: pointer !important;
+}
+
+/* 2. 模拟一、三号的悬停逻辑：鼠标放上去时，大容器绝不发生一像素的位移 */
+#vessel-second:hover {
+    transform: none !important;
+    background: none !important;
+}
+
+/* 3. 🌟 核心视觉对齐：将悬停反馈全部转嫁给内部的研钵发光层与研杵 */
+/* 当鼠标悬停在二号器皿上时，让它内部的 SVG 元素整体绽放出优雅的柔光，如同青瓷盆和胭脂盒内部苏醒一样 */
+#vessel-second:hover svg,
+#vessel-second:hover .mortar-glow {
+    filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.95)) brightness(1.15) !important;
+    transition: filter 0.3s ease !important;
+}
+
+/* 4. 彻底掐断内部小研杵（.pestle）或其他细碎组件在悬停时无意触发的旧位移脚本 */
+#vessel-second:hover [class*="pestle"],
+#vessel-second [class*="pestle"] {
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+}
+
+/* ==========================================================================
+   💥 粒子溅射特效与药杵超狂暴研磨动画 (追加在最底部)
+   ========================================================================== */
+
+/* 1. 溅射粒子基础样式 */
+.splash-particle {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    animation: particleExplode 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+}
+
+/* 2. 爆炸抛物线动画 */
+@keyframes particleExplode {
+    0% {
+        transform: translate3d(0, 0, 0) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translate3d(var(--x), var(--y), 0) scale(0);
+        opacity: 0;
+    }
+}
+
+/* 🔨 研磨容器高频震动/研磨动画 */
+.vessel-bowl.pestle-fast-active .pestle-anim {
+    animation: pestleFastThump 0.2s ease-in-out infinite alternate !important;
+    transform-origin: 50px 38px;
+}
+
+@keyframes pestleFastThump {
+    0% {
+        transform: rotate(-25deg) translate(-2px, -3px);
+    }
+    50% {
+        transform: rotate(-10deg) translate(3px, 5px);
+    }
+    100% {
+        transform: rotate(-30deg) translate(-4px, 2px);
+    }
+}
+
+/* 4. 等待点击时的呼吸提示效果 */
+.stage-highlight {
+    animation: vesselBreath 1.2s ease-in-out infinite alternate !important;
+}
+
+@keyframes vesselBreath {
+    0% {
+        filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.4));
+    }
+    100% {
+        filter: drop-shadow(0 0 20px rgba(212, 175, 55, 1)) brightness(1.2);
+    }
+}
+
+/* ==========================================================================
+   ✨ 恢复完美的药杵研磨节奏（点击时适度变快，顺畅且有节奏）
+   ========================================================================== */
+
+/* 当加上 .pestle-fast-active 时，强制覆盖之前的 none !important，使用更稳健优雅的 0.5s 周期 */
+#vessel-second.pestle-fast-active .pestle-anim {
+    animation: pestleFastMash 0.5s cubic-bezier(0.25, 1, 0.5, 1) infinite !important;
+}
+
+/* ==========================================================================
+   🌸 终章对话框文字溢出彻底修正（让长文本自动折行、不撑破容器）
+   ========================================================================== */
+
+/* 1. 强制对白容器内的文本在达到边界时自动换行，并允许长句自适应 */
+#dialogue-text {
+    white-space: normal !important;       /* 允许并强制文本正常换行 */
+    word-break: break-all !important;      /* 哪怕有英文或符号也强制拆行 */
+    overflow-wrap: break-word !important;  /* 单词边界内换行 */
+    line-height: 1.6 !important;           /* 舒适的行高，防止字重叠 */
+    font-size: 16px !important;            /* 稍微优化终章字号，阅读更典雅 */
+    max-height: 160px !important;          /* 限制最大高度，死死卡在文本框内 */
+    overflow-y: auto !important;           /* 万一字数实在太多，允许在框内上下滚动，绝不溢出 */
+    padding-right: 10px !important;        /* 给潜在的滚动条留出呼吸空间 */
+}
+
+/* 2. 优化对白框本体，确保在终章长剧本下有足够的安全承载空间 */
+#story-stage .dialogue-box {
+    min-height: 180px !important;
+    height: auto !important;
+    padding: 30px 40px !important;
+    box-sizing: border-box !important;
+}
+
+/* 🔨 研杵捣动/研磨动画 */
+.pestle-anim {
+    transform-origin: 50px 50px;
+    transition: transform 0.3s ease;
+}
+
+/* 研磨激活状态：旋转并快速上下捣压 */
+.pestle-fast-active {
+    animation: pestleGrind 0.3s ease-in-out infinite alternate !important;
+}
+
+@keyframes pestleGrind {
+    0% {
+        transform: rotate(-15deg) translate(0, 0);
+    }
+    50% {
+        transform: rotate(10deg) translate(-3px, 6px);
+    }
+    100% {
+        transform: rotate(-30deg) translate(4px, 2px);
+    }
+}
+
+/* 容器步骤高亮等待提示 */
+.stage-highlight {
+    animation: vesselPulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes vesselPulse {
+    0% {
+        filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.4));
+        transform: scale(1);
+    }
+    100% {
+        filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.9));
+        transform: scale(1.08);
+    }
+}
+
+/* ================================================================
+   🔨 FINAL FIX：白砂研钵点击后，真正让 SVG 研杵上下捣磨
+   ================================================================
+   原问题有两个：
+   1. 原 CSS 调用了 pestleFastMash，但文件中没有这个 @keyframes；
+   2. 前面的 [class*="pestle"] 规则把 animation 强制设为了 none。
+
+   下面放在文件最后，用更高优先级覆盖前面的冲突规则。
+   ================================================================ */
+
+/* 静止状态：研杵保持 HTML/SVG 原始位置 */
+#vessel-second .pestle-anim {
+    animation: none !important;
+    transform-box: fill-box !important;
+    transform-origin: 50% 100% !important;
+    will-change: transform;
+}
+
+/* 点击后：直接驱动 SVG <g class="pestle-anim"> */
+#vessel-second.pestle-fast-active .pestle-anim,
+#vessel-second .pestle-anim.pestle-fast-active {
+    animation: pestleRealGrind 0.42s cubic-bezier(0.42, 0, 0.58, 1) infinite !important;
+    transform-box: fill-box !important;
+    transform-origin: 50% 100% !important;
+}
+
+/* 研钵本身只做非常轻微的震动，避免整个器皿乱跑 */
+#vessel-second.pestle-fast-active {
+    animation: mortarShake 0.42s ease-in-out infinite !important;
+}
+
+/* 真实的上下捣磨动作：抬起 → 下压 → 回弹 */
+@keyframes pestleRealGrind {
+    0% {
+        transform: translate(0px, 0px) rotate(-15deg);
+    }
+    18% {
+        transform: translate(-1px, 4px) rotate(-12deg);
+    }
+    38% {
+        transform: translate(2px, 13px) rotate(-5deg);
+    }
+    50% {
+        transform: translate(0px, 17px) rotate(0deg);
+    }
+    62% {
+        transform: translate(-2px, 12px) rotate(-8deg);
+    }
+    82% {
+        transform: translate(1px, 3px) rotate(-18deg);
+    }
+    100% {
+        transform: translate(0px, 0px) rotate(-15deg);
+    }
+}
+
+@keyframes mortarShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-1px); }
+    50% { transform: translateX(1px); }
+    75% { transform: translateX(-0.5px); }
+}
+
+/* 保留旧代码对 pestleFastMash 的引用也不会报错 */
+@keyframes pestleFastMash {
+    0% { transform: translate(0, 0) rotate(-15deg); }
+    20% { transform: translate(-1px, 4px) rotate(-12deg); }
+    50% { transform: translate(0, 16px) rotate(0deg); }
+    80% { transform: translate(1px, 3px) rotate(-18deg); }
+    100% { transform: translate(0, 0) rotate(-15deg); }
+}

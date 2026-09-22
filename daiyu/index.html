@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>红楼·物语 - 林黛玉篇</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<base target="_blank">
+</head>
+<body>
+    <div id="hint-ui">
+        <span id="guide-text">【前盟再启】轻触右页绛痕素帕线稿，聆听潇湘琴音...</span>
+    </div>
+
+    <div id="book-stage">
+        <div id="book-entity">
+            <div class="book-page-left">
+                <div class="vertical-text">
+                    灵河岸边的一株绛珠仙草，受神瑛侍者灌溉，化为人形。‘下凡历劫，要把一生的眼泪还他’。<br>
+                    多愁多病身，孤高自许。病榻前素帕焚尽，潇湘馆里翠竹空摇。<br>
+                    她的执念化成世间最纯净的痴，叠进素帕的斑斑泪痕，题了一纸相思，也题了一生宿命...
+                </div>
+            </div>
+
+            <div class="book-spine-line"></div>
+
+            <div class="book-page-right">
+                <div id="daiyu-sketch-btn">
+                    <img src="../image/daiyu_sketch.png" alt="林黛玉白描线稿" class="daiyu-book-sketch">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="awakening-stage" class="chinese-desk-stage">
+        <div class="lock-container" id="gold-lock">
+            <div class="ritual-circle"></div>
+            
+            <div class="lock-sketch" id="lock-sketch">
+                <img src="../image/daiyu_sketch.png" alt="绛痕素帕线稿" class="awakening-img-sketch">
+                <span class="sketch-text">触碰素帕 凝聚泪魂</span>
+            </div>
+            
+            <div class="lock-colored" id="lock-colored">
+                <svg width="100%" height="100%" viewBox="0 0 380 540" class="mask-svg-container">
+                    <defs>
+                        <mask id="center-spread-mask" maskUnits="userSpaceOnUse">
+                            <circle id="mask-circle" cx="190" cy="270" r="0" fill="white" />
+                        </mask>
+                    </defs>
+                    <image href="../image/daiyu_full_color.png" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" mask="url(#center-spread-mask)"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div id="scene-stage">
+        <div id="viewport">
+            <div id="scroll-container">
+    <div class="layer layer-video">
+        <video id="scene-video" src="../image/daiyu_shilei.mp4" autoplay loop muted></video>
+    </div>
+
+    <div id="prop-daiyu" class="interactive-element person-hotspot"></div>
+    <div id="prop-tea" class="interactive-element shadow-clicker"></div>
+    <div id="prop-books" class="interactive-element shadow-clicker"></div>
+
+    <div id="glow-tea" class="local-glow-element"></div>
+    <div id="glow-books" class="local-glow-element"></div>
+    <div id="glow-daiyu" class="local-glow-element"></div>
+</div>
+        </div>
+    </div>
+
+    <div id="story-stage">
+        <img id="story-bg" src="../image/daiyu_juqing.jpg" alt="剧情演绎背景图">
+        <div id="dialogue-box">
+            <div id="dialogue-name">林黛玉</div>
+            <div id="dialogue-text">正在初始化剧情...</div>
+            <div id="dialogue-next-btn"><span>▼</span></div>
+        </div>
+    </div>
+
+    <div id="play-qin-stage" style="display: none;">
+        <button id="next-stage-btn" onclick="handleQinGameComplete()">
+    进入终章 ➔
+        </button>
+    <div id="guqin-3d-canvas-container" style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1;"></div>
+
+    <div id="qin-progress-bar" style="position: relative; z-index: 10;">
+        <div id="qin-progress-fill"></div>
+    </div>
+    <div class="qin-hint" style="position: relative; z-index: 10;">滑动鼠标拂过琴弦...</div>
+</div>
+
+        <div id="qin-toast-ui">
+            <div id="toast-title">幽壑听琴</div>
+            <div id="toast-content">轻抚瑶琴，拨动心弦...</div>
+        </div>
+    </div>
+
+    <div id="curtain-call-stage">
+        <div class="curtain-text">绛珠还泪，弦断音销。属于林黛玉的纯净痴念，到这里也归于沉寂。</div>
+    </div>
+
+    <!-- 将原来的标签修改为以下内容（volume 范围为 0.0 到 1.0，0.3 代表 30% 音量）： -->
+<div id="video-stage" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 999; transition: opacity 1s ease;">
+    <video id="transition-video" src="../image/daiyu_fuqin.mp4" style="width: 100%; height: 100%; object-fit: cover;" playsinline onloadedmetadata="this.volume=0.3"></video>
+</div>
+
+    <div id="fog-overlay">
+        <svg width="100%" height="100%" style="position:absolute; top:0; left:0;">
+            <defs>
+                <filter id="true-fog-filter" x="-20%" y="-20%" width="140%" height="140%">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="4" result="noise" />
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="120" xChannelSelector="R" yChannelSelector="G" />
+                </filter>
+            </defs>
+        </svg>
+        <div class="true-fog-shroud mist-layer-1"></div>
+    </div>
+
+    <script src="guqin3d.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
+</body>
+</html>

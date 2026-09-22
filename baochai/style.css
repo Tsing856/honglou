@@ -1,0 +1,1393 @@
+/* ================= 1. 全局初始化与基础舞台 ================= */
+* { box-sizing: border-box; }
+body, html {
+    margin: 0; padding: 0;
+    width: 100vw; height: 100vh;
+    overflow: hidden; background-color: #1a120e; 
+    font-family: "Noto Serif SC", "Source Han Serif CN", "SimSun", serif; 
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ================= 提示 UI：初始黑金质感（前三步使用） ================= */
+#hint-ui {
+    position: fixed; top: 4vh; left: 4vw;
+    color: #cbd5e1; 
+    /* 初始：保持第一步神秘、深邃的黑木半透明背景 */
+    background: rgba(25, 20, 18, 0.93); 
+    padding: 20px 30px; 
+    border-radius: 2px; 
+    border-left: 4px solid #a6846a; /* 初始黄铜/红木色边框 */
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6); 
+    pointer-events: none; 
+    font-size: 14px; line-height: 1.8; letter-spacing: 2px; z-index: 100;
+    backdrop-filter: blur(5px); 
+    /* 🔴 增加 transform 过渡，让切换风格时有丝滑的微调动画 */
+    transition: opacity 0.5s ease, background 0.6s ease, color 0.6s ease, border 0.6s ease;
+}
+
+/* 🌟 动态新增：最终视频漫游场景的宣纸淡青 UI 风格 */
+#hint-ui.scene-style {
+    width: 32vw; 
+    background: rgba(245, 241, 233, 0.94); /* 宣纸素绢白 */
+    color: #3a2c1e; /* 熟褐色字 */
+    border: 1px solid #9e846b;
+    border-left: 5px solid #6b7b6e; /* 淡青竹色边，完美融合画面 */
+    box-shadow: 0 12px 35px rgba(42, 31, 21, 0.12); 
+    font-family: "SimSun", "Noto Serif SC", serif;
+    font-weight: 500;
+}
+
+/* 最终幕点击道具后，弹出文字里的朱砂红标题 */
+#hint-ui.scene-style b {
+    color: #8c241e !important; 
+    font-size: 15px;
+    letter-spacing: 1px;
+    display: inline-block;
+    margin-bottom: 4px;
+}
+/* 🟢 修复：用纯代码（SVG矢量纹理）重新生成高质感红木桌面 */
+.chinese-desk-stage {
+    position: absolute; width: 100vw; height: 100vh; top: 0; left: 0;
+    display: flex; justify-content: center; align-items: center;
+    
+    /* 使用代码生成的红木微细木纹 */
+    background-color: #26140a;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100' height='100' fill='%23361c0e'/%3E%3Crect width='100' height='100' filter='url(%23noise)'/%3E%3C/svg%3E");
+    
+    /* 配合四周的烛光感暗角，让代码红木更逼真 */
+    box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.9); 
+}
+
+/* ================= 2. 书籍翻页阶段 ================= */
+#book-stage { z-index: 10; transition: opacity 1s ease, transform 1s ease; }
+.book-3d {
+    position: relative; width: 340px; height: 480px; 
+    transform-style: preserve-3d;
+    transition: transform 1.6s cubic-bezier(0.4, 0, 0.2, 1), width 1.6s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer; box-shadow: 0px 35px 70px rgba(0, 0, 0, 0.8);
+}
+.book-side { position: absolute; top: 0; left: 0; width: 340px; height: 100%; backface-visibility: hidden; }
+
+/* 🟢 修复：用纯代码重新恢复原本精致的古籍宣纸黄色封面 */
+.book-cover-front {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='480' viewBox='0 0 340 480'%3E%3Crect width='340' height='480' fill='%23d9cbb6'/%3E%3Cpath d='M25 0 v480' stroke='%234a3625' stroke-width='4' opacity='0.7'/%3E%3C/svg%3E");
+    background-size: cover; z-index: 5; transform-origin: left center; transition: transform 1.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.book-cover-front::after {
+    content: "紅樓物語"; writing-mode: vertical-rl; position: absolute;
+    top: 70px; left: 145px; font-size: 26px; color: #2c1e13; letter-spacing: 14px; font-weight: bold; opacity: 0.85;
+}
+.book-cover-back { background: #bfae95; transform: translateZ(-10px) rotateY(180deg); }
+.book-spine { position: absolute; top: 0; left: 0; width: 10px; height: 100%; background: #3d2c1f; transform: rotateY(-90deg); transform-origin: left center; }
+.book-pages-container {
+    position: absolute; top: 5px; left: 5px; width: calc(100% - 10px); height: calc(100% - 10px);
+    background: #eedfca; transform: translateZ(-5px); display: flex; opacity: 0; transition: opacity 0.8s ease;
+}
+.book-page-left, .book-page-right { flex: 1; height: 100%; padding: 40px 30px; background: #eedfca; position: relative; }
+.book-page-right { border-left: 1px solid rgba(0, 0, 0, 0.08); }
+.vertical-text { writing-mode: vertical-rl; height: 100%; font-size: 13px; line-height: 2.6; color: #443528; letter-spacing: 3px; }
+
+/* 书本右侧线稿图容器（第二步） */
+.book-sketch-wrapper { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+.baochai-book-sketch { width: 90%; height: 85%; object-fit: containment; opacity: 0.75; filter: sepia(0.1); }
+
+.book-open-active { width: 680px; transform: scale(1.02); }
+.book-open-active .book-cover-front { transform: rotateY(-180deg); }
+.book-open-active .book-pages-container { opacity: 1; transition-delay: 0.3s; }
+
+/* ================= 3. 线稿未唤醒 -> 照片水波蔓延（第三步） ================= */
+#awakening-stage { display: none; opacity: 0; z-index: 25; transition: opacity 1s ease; }
+
+/* 核心父容器：固定死尺寸，作为线稿和彩图的共同基准锚点 */
+.lock-container { 
+    position: relative; 
+    width: 380px; 
+    height: 540px; 
+    cursor: pointer; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+}
+
+/* 🟡 金色古典圆圈（仪式阵）：保持正圆，以父容器中心进行绝对居中 */
+.ritual-circle {
+    position: absolute; 
+    width: 108%; 
+    height: 106%; 
+    border: 2px dashed rgba(212, 175, 55, 0.4); 
+    border-radius: 50%; 
+    box-shadow: 0 0 25px rgba(212, 175, 55, 0.2), inset 0 0 20px rgba(212, 175, 55, 0.15); 
+    z-index: 1;
+    animation: rotateCircle 20s linear infinite; 
+    transition: opacity 0.8s ease, transform 0.8s ease; 
+}
+.ritual-circle::before {
+    content: ""; position: absolute; top: -6px; left: -6px; right: -6px; bottom: -6px;
+    border: 1px solid rgba(212, 175, 55, 0.15); border-radius: 50%;
+    animation: circlePulse 3s ease-in-out infinite alternate;
+}
+
+/* 🎯 绝对居中线稿层：通过数学中心点定位，确保与彩色照片、金色圆圈的圆心死死锁定 */
+.lock-sketch { 
+    position: absolute; 
+    top: 50%; 
+    left: 50%;
+    transform: translate(-50%, -50%); /* 依靠这个实现绝对对齐，线稿再小也不会位移 */
+    width: 100%; 
+    height: 100%; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center; 
+    transition: opacity 1.2s ease; 
+    z-index: 2; 
+}
+
+/* 🎯 关键修改：进一步缩小线稿图的渲染尺寸（当前设定为 65%） */
+.awakening-img-sketch { 
+    width: 65%;              /* 🟢 如果觉得还不够小，可以继续改小成 60% 或 55% */
+    height: 65%;             /* 🟢 高度同步保持 65% */
+    object-fit: contain;     /* 🟢 保持线稿原图完整比例，绝不拉伸错位 */
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4)); 
+}
+
+/* 提示文字绝对定位在最底部，完全不参与弹性盒布局，绝不顶开或挤压线稿图的位置 */
+.sketch-text { 
+    position: absolute;
+    bottom: 35px;      
+    left: 50%;
+    transform: translateX(-50%); 
+    color: #baa185; 
+    font-size: 14px; 
+    letter-spacing: 4px; 
+    text-shadow: 0 2px 4px rgba(0,0,0,0.6); 
+    font-family: "SimSun", serif; 
+    white-space: nowrap; 
+}
+
+/* 🎯 关键修复：让唤醒后的全彩全身照片图层【绝对定位】完美叠在线稿正上方 */
+.lock-colored { 
+    position: absolute; 
+    top: 0; left: 0;
+    width: 100%; 
+    height: 100%; 
+    opacity: 0; 
+    z-index: 3; 
+    transition: opacity 0.4s ease, filter 1.5s ease; 
+    filter: drop-shadow(0 0 0px rgba(212, 175, 55, 0)); 
+}
+/* 强制 SVG 容器无缝占满 */
+.mask-svg-container { 
+    width: 100%; 
+    height: 100%; 
+    display: block;
+}
+#mask-circle { transition: r 2.5s cubic-bezier(0.1, 0.8, 0.25, 1); }
+
+/* ✨ 彩色激活：触发神性外发光效果 */
+.lock-colored.bleed-active { 
+    opacity: 1; 
+    filter: drop-shadow(0 0 25px rgba(226, 182, 100, 0.75)) drop-shadow(0 0 50px rgba(212, 175, 55, 0.4)); 
+}
+
+/* ================= 3.5 新增：第三步专属动画效果 ================= */
+@keyframes rotateCircle { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes circlePulse { 0% { transform: scale(0.98); opacity: 0.3; } 100% { transform: scale(1.02); opacity: 0.8; } }
+
+/* ================= 4. 云雾粒子转场 ================= */
+#fog-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 1000; display: none; }
+.true-fog-shroud {
+    position: absolute; width: 140vw; height: 140vh; top: -20vh; left: -20vw;
+    background: radial-gradient(circle, rgba(245,242,235,0.96) 0%, rgba(232,225,212,0.7) 45%, rgba(26,18,14,0) 70%);
+    filter: url(#true-fog-filter); opacity: 0; transform: scale(0.5); 
+}
+#fog-overlay.fog-active { display: block; }
+#fog-overlay.fog-active .mist-layer-1 { animation: gatherAndDissolve1 5s cubic-bezier(0.25, 1, 0.3, 1) forwards; }
+#fog-overlay.fog-active .mist-layer-2 { animation: gatherAndDissolve2 5.2s cubic-bezier(0.25, 1, 0.3, 1) forwards; }
+#fog-overlay.fog-active .mist-layer-3 { animation: gatherAndDissolve3 4.8s cubic-bezier(0.25, 1, 0.3, 1) forwards; }
+
+@keyframes gatherAndDissolve1 {
+    0% { transform: scale(0.3) rotate(0deg); opacity: 0; }
+    25% { transform: scale(1.1) rotate(15deg); opacity: 0.98; }
+    65% { transform: scale(1.15) rotate(25deg); opacity: 0.98; }
+    100% { transform: scale(1.8) rotate(60deg); opacity: 0; }
+}
+@keyframes gatherAndDissolve2 {
+    0% { transform: scale(0.4) rotate(90deg); opacity: 0; }
+    28% { transform: scale(1.05) rotate(60deg); opacity: 0.95; }
+    62% { transform: scale(1.1) rotate(45deg); opacity: 0.95; }
+    100% { transform: scale(1.7) rotate(-20deg); opacity: 0; }
+}
+@keyframes gatherAndDissolve3 {
+    0% { transform: scale(0.2) rotate(-45deg); opacity: 0; }
+    24% { transform: scale(1.2) rotate(0deg); opacity: 0.9; }
+    68% { transform: scale(1.25) rotate(10deg); opacity: 0.9; }
+    100% { transform: scale(1.9) rotate(40deg); opacity: 0; }
+}
+
+/* ================= 5. 大场景横轴漫游（3D视频 + 人物交互版） ================= */
+#scene-stage { 
+    position: absolute; width: 100vw; height: 100vh; top: 0; left: 0; 
+    display: none; opacity: 0; transition: opacity 2.2s ease; z-index: 5; 
+    background-color: #000;
+}
+#viewport { 
+    position: relative; width: 100%; height: 100%; overflow: hidden;
+    perspective: 1000px; 
+    perspective-origin: center center;
+}
+#scroll-container { 
+    position: absolute; width: 100vw; height: 100vh; left: 0; top: 0; 
+    transform-style: preserve-3d; transition: none; 
+}
+.layer-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+#scene-video { width: 110vw; height: 110vh; object-fit: cover; transform: translate(-4.5%, -4.5%); }
+
+/* 🎯 薛宝钗人物透明点击热区：根据画面人物位置精确悬浮于正中心 */
+/* 🎯 薛宝钗人物透明点击热区：校准 3D 三维深度层级 */
+/* 🎯 薛宝钗人物绝对隐形交互热区 */
+.person-hotspot {
+    position: absolute;
+    left: 41vw;       
+    top: 32vh;        
+    width: 18vw;      
+    height: 55vh;
+    z-index: 10;      /* 保持在最前层，确保 3D 漫游位移后依然能点中 */
+    cursor: pointer;
+    
+    /* 🎨 保持完全透明，不加任何背景色与阴影 */
+    background: transparent; 
+    
+    transform-style: preserve-3d;
+    transform: translateZ(100px); 
+    
+    /* 🟢 彻底移除了 transition 和 :hover 的金光/发光代码，使其完全无痕化 */
+}
+/* 调试小技巧：如果你不确定有没有点准她，可以把下面的注释打开，这样鼠标悬停时她会有一个淡淡的发光轮廓 */
+/* .person-hotspot:hover { background: rgba(226, 182, 100, 0.05); box-shadow: inset 0 0 20px rgba(226, 182, 100, 0.2); } */
+
+/* 🌟 古典宣纸挂签样式 */
+.interactive-element { position: absolute; cursor: pointer; user-select: none; }
+.props { 
+    writing-mode: vertical-rl;
+    padding: 18px 10px 14px 10px; 
+    background: rgba(246, 241, 231, 0.88); 
+    color: #4a3319; 
+    font-size: 13px; 
+    font-family: "SimSun", "Noto Serif SC", serif;
+    font-weight: bold;
+    letter-spacing: 5px;
+    border: 1px solid #a68c6d;
+    outline: 1px solid #a68c6d;
+    outline-offset: -4px; 
+    z-index: 3; 
+    box-shadow: 0 8px 25px rgba(42, 31, 21, 0.15);
+    transform-style: preserve-3d;
+    transform: translateZ(90px); 
+    animation: propInkGlow 4s ease-in-out infinite alternate;
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.3, 1);
+}
+.props:hover {
+    color: #8c241e; 
+    border-color: #8c241e;
+    outline-color: #8c241e;
+    background: rgba(253, 251, 247, 0.98);
+    transform: translateZ(120px) translateY(-8px);
+    box-shadow: 0 15px 35px rgba(140, 36, 30, 0.25);
+}
+
+/* 挂签物理坐标微调 */
+#prop-tea { left: 20vw; bottom: 38vh; }
+#prop-books { left: 70vw; bottom: 34vh; }
+
+@keyframes propInkGlow {
+    0% { box-shadow: 0 8px 20px rgba(42, 31, 21, 0.15); border-color: #a68c6d; }
+    100% { box-shadow: 0 8px 30px rgba(166, 140, 109, 0.35); border-color: #cbaf8d; }
+}
+
+/* ================= 6. 阶梯式提示框扩展样式 ================= */
+#hint-ui.scene-style {
+    width: 32vw; 
+    background: rgba(245, 241, 233, 0.94); 
+    color: #3a2c1e; 
+    border: 1px solid #9e846b;
+    border-left: 5px solid #6b7b6e; 
+    box-shadow: 0 12px 35px rgba(42, 31, 21, 0.12); 
+    font-family: "SimSun", "Noto Serif SC", serif;
+    font-weight: 500;
+}
+#hint-ui.scene-style b {
+    color: #8c241e !important; 
+    font-size: 15px;
+    letter-spacing: 1px;
+    display: inline-block;
+    margin-bottom: 4px;
+}
+/* ================= 7. 最终校准：第一张图剧情与对话框样式 ================= */
+#story-stage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 999;                  /* 提到最高层，绝对防止被任何漫游背景遮挡 */
+    
+    /* 初始彻底隐藏并且透明，只有添加 active 后才在纯黑背景上淡入 */
+    display: none;                 
+    opacity: 0;                    
+    
+    pointer-events: none;          /* 未触发时不干扰键盘漫游 */
+    background: #000000;           /* 作为大雾散去、场景交替的纯黑底色 */
+    transition: opacity 1.5s ease-in-out; /* 1.5秒丝滑淡入过渡 */
+}
+
+/* 核心修复：确保 active 被激活时，不仅显示，还要打开点击判定 */
+#story-stage.active {
+    display: block;                
+    pointer-events: auto;          
+}
+
+#story-bg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;             
+}
+
+/* ⛩️ 古风一体化对话框基座 (保持原外观不变，仅加入了出场延迟动画) */
+#dialogue-box {
+    position: absolute;
+    bottom: 4vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 55vw;
+    height: 17vh;
+    min-height: 150px;
+    background: rgba(246, 242, 234, 0.95);
+    border: 3px solid #3a2212;     
+    outline: 1px solid #9e846b;    
+    outline-offset: -5px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+    padding: 35px 45px;
+    font-family: "SimSun", "Noto Serif SC", serif;
+    z-index: 1000;                 
+    
+    /* 初始处于透明并向下偏 20px。等待背景图亮起时延迟升起 */
+    opacity: 0;
+    transform: translate(-50%, 20px);
+    transition: opacity 1s ease 0.8s, transform 1s cubic-bezier(0.25, 1, 0.3, 1) 0.8s; /* 延迟0.8秒升起 */
+}
+
+/* 当剧情场景完全加载，配合 JS 加上 fade-in 类名时，对话框浮现 */
+#story-stage.fade-in #dialogue-box {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+/* 讲话者名字标签 */
+#dialogue-name {
+    position: absolute;
+    top: -18px;
+    left: 35px;
+    background: #8c241e;   /* 默认宝钗的朱砂红 */
+    color: #f6f2ea;               
+    padding: 5px 22px;
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    border: 1px solid #3a2212;
+    transition: background 0.4s ease; /* 换人说话时，名字框颜色能丝滑渐变 */
+}
+
+/* 修改对话核心文本区：支持渲染出更漂亮的旁白特效 */
+#dialogue-text {
+    color: #2c1e13;               
+    font-size: 19px;
+    line-height: 1.8;
+    letter-spacing: 2px;
+    font-weight: 500;
+    text-align: left;
+    transition: opacity 0.2s ease, color 0.3s ease;
+}
+
+/* 让剧本里括号内的动作神态描写变成淡淡的水墨灰色，台词保持黑色，主次极其分明！ */
+#dialogue-text br + br {
+    display: block;
+    content: "";
+    margin-top: -5px;
+}
+
+/* 🖋️ 右下角提示按键 */
+#dialogue-next-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 25px;
+    cursor: pointer;
+    color: #8c241e;               
+    font-size: 18px;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px dashed rgba(140, 36, 30, 0.5);
+    border-radius: 50%;
+    z-index: 1001;                 
+    animation: dialogArrowPulse 1.2s ease-in-out infinite alternate;
+}
+
+#dialogue-next-btn:hover {
+    transform: scale(1.15);
+    background: rgba(140, 36, 30, 0.08);
+}
+
+@keyframes dialogArrowPulse {
+    0% { opacity: 0.4; transform: translateY(0); }
+    100% { opacity: 1; transform: translateY(4px); }
+}
+
+/* ================= 8. 新增：【宝钗扑蝶】场景与动态蝴蝶样式 ================= */
+#catch-butterfly-stage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1005;                 /* 层级高于之前的对话舞台 */
+    display: none;                 /* 初始隐藏 */
+    opacity: 0;
+    overflow: hidden;
+    background: #000000;
+    transition: opacity 1.5s ease-in-out;
+}
+
+#catch-butterfly-stage.active {
+    display: block;
+}
+
+#garden-bg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    user-select: none;
+}
+
+/* ================= 🦋 真实质感 3D 蝴蝶升级样式 ================= */
+.live-butterfly { 
+    position: absolute; 
+    width: 50px; 
+    height: 50px; 
+    cursor: pointer; 
+    z-index: 1010; 
+    transform-style: preserve-3d; 
+    /* 增加基础透视，让振翅的 3D 效果更强烈 */
+    perspective: 300px;
+    transition: left 3.5s linear, top 3.5s linear, transform 0.3s ease; 
+}
+
+/* 蝴蝶的身体与触角 */
+.live-butterfly::shadow {
+    content: "";
+    position: absolute;
+    top: 18px; left: 24px;
+    width: 3px; height: 16px;
+    background: #2c1e13;
+    border-radius: 4px;
+    z-index: 2;
+    box-shadow: 0 -4px 0 #2c1e13; /* 模拟头部 */
+}
+
+/* 翅膀公共基础样式：左右翅膀独立，高精度边缘裁剪 */
+.live-butterfly::before, .live-butterfly::after { 
+    content: ""; 
+    position: absolute; 
+    top: 5px; 
+    width: 23px; 
+    height: 38px; 
+    opacity: 0.9; 
+}
+
+/* 🟢 翡翠玉色蝴蝶翅膀纹理 */
+.live-butterfly.wing-jade::before, .live-butterfly.wing-jade::after { 
+    background: radial-gradient(circle at center, #f4fbf7 10%, #a3d9c9 60%, #529b86 100%); 
+    filter: drop-shadow(0 0 6px rgba(163, 217, 201, 0.8)); 
+}
+/* ⚪ 缂丝雪白蝴蝶翅膀纹理 */
+.live-butterfly.wing-white::before, .live-butterfly.wing-white::after { 
+    background: radial-gradient(circle at center, #ffffff 20%, #e2e8f0 70%, #94a3b8 100%); 
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.9)); 
+}
+/* 🟡 描金泥金蝴蝶翅膀纹理 */
+.live-butterfly.wing-gold::before, .live-butterfly.wing-gold::after { 
+    background: radial-gradient(circle at center, #fffdf5 15%, #f59e0b 65%, #b45309 100%); 
+    filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.8)); 
+}
+
+/* 👈 左翅膀：轴心定在最右侧，使用 clip-path 裁剪出带有前后翅起伏的真实凤蝶轮廓 */
+.live-butterfly::before { 
+    left: 2px; 
+    transform-origin: right center; 
+    clip-path: polygon(100% 38%, 75% 0%, 15% 10%, 0% 45%, 45% 65%, 15% 90%, 55% 100%, 100% 65%);
+    animation: flapLeftReal 0.15s infinite alternate ease-in-out; 
+}
+
+/* 👉 右翅膀：轴心定在最左侧，镜像裁剪出右侧凤蝶轮廓 */
+.live-butterfly::after { 
+    right: 2px; 
+    transform-origin: left center; 
+    clip-path: polygon(0% 38%, 25% 0%, 85% 10%, 100% 45%, 55% 65%, 85% 90%, 45% 100%, 0% 65%);
+    animation: flapRightReal 0.15s infinite alternate ease-in-out; 
+}
+
+/* 🎬 模拟真实昆虫的高频 3D 振翅动画（带有一点前倾角倾斜） */
+@keyframes flapLeftReal { 
+    0% { transform: rotateY(10deg) rotateZ(-5deg); } 
+    100% { transform: rotateY(72deg) rotateZ(5deg); } 
+} 
+@keyframes flapRightReal { 
+    0% { transform: rotateY(-10deg) rotateZ(5deg); } 
+    100% { transform: rotateY(-72deg) rotateZ(-5deg); } 
+}
+/* ⛩️ 扑蝶专用古典灵动浮层 */
+#catch-toast-ui {
+    position: fixed;
+    top: 5vh;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(246, 242, 234, 0.95);
+    border: 2px solid #8c241e;     /* 古典朱砂红细框 */
+    border-radius: 2px;
+    padding: 15px 35px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+    text-align: center;
+    font-family: "SimSun", serif;
+    z-index: 1050;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+#toast-title {
+    color: #8c241e;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+}
+#toast-content {
+    color: #2c1e13;
+    font-size: 16px;
+    letter-spacing: 1px;
+}
+
+
+/* ==========================================================================
+   🌸 剧情回顾：三件器物入口
+   ========================================================================== */
+.curtain-choice-wrap {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 7vh;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 7vw;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 28px;
+    z-index: 2;
+    opacity: 0;
+    animation: recapChoiceIn 1.2s ease 1.6s forwards;
+}
+
+.curtain-choice-btn {
+    min-width: 190px;
+    padding: 15px 34px;
+    border: 1px solid rgba(201, 177, 145, 0.7);
+    background: rgba(20, 16, 14, 0.55);
+    color: #e9ddcb;
+    font-family: "Noto Serif SC", "SimSun", serif;
+    font-size: 15px;
+    letter-spacing: 4px;
+    cursor: pointer;
+    transition: all 0.45s ease;
+    backdrop-filter: blur(5px);
+}
+
+.curtain-choice-btn:hover {
+    background: rgba(104, 35, 28, 0.72);
+    border-color: #c8a77d;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+@keyframes recapChoiceIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#story-recap-stage {
+    position: fixed;
+    inset: 0;
+    z-index: 12000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 50% 34%, rgba(129, 91, 60, 0.12), transparent 34%),
+        linear-gradient(135deg, #17110d 0%, #241812 48%, #120d0a 100%);
+    color: #e9ddcb;
+    opacity: 0;
+    transition: opacity 0.9s ease;
+}
+
+#story-recap-stage.active { display: flex; opacity: 1; }
+
+.recap-paper-glow {
+    position: absolute;
+    width: 65vw;
+    height: 65vw;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(191, 160, 119, 0.08), transparent 65%);
+    pointer-events: none;
+}
+
+.recap-header {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    margin-bottom: 5vh;
+}
+
+.recap-kicker {
+    font-size: 11px;
+    letter-spacing: 8px;
+    color: #a98a6a;
+    margin-bottom: 12px;
+}
+
+.recap-header h2 {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 400;
+    letter-spacing: 12px;
+    padding-left: 12px;
+}
+
+.recap-header p {
+    margin: 18px 0 0;
+    color: rgba(233, 221, 203, 0.62);
+    font-size: 13px;
+    letter-spacing: 3px;
+}
+
+/* ==========================================================================
+   🌸 剧情回顾：三器物卡片（古风边框图 + 悬浮升起 + 点击稳定版）
+   ========================================================================== */
+.recap-artifact {
+    position: relative;
+    width: 250px;
+    min-height: 430px;
+    padding: 25px 20px 22px;
+    
+    /* 1. 清除原本的半透明线框与内发光 */
+    border: none !important;
+    outline: none !important;
+    background-color: transparent !important;
+    
+    /* 2. 🌟 载入古风边框图片，精准居中铺满 */
+    background-image: url("../image/边框.png") !important;
+    background-size: 350% 240% !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    
+    color: #e8dac4;
+    cursor: pointer;
+    font-family: "Noto Serif SC", "SimSun", serif;
+    
+    /* 3. 🔴 关键点：取消内伪元素的线框，防止双重边框冲突 */
+    overflow: visible;
+    filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.5));
+    transition: transform 0.45s cubic-bezier(.2, .8, .2, 1), filter 0.45s ease;
+}
+
+/* 移除原代码里加在卡片内部的 1px 细线条伪元素 */
+.recap-artifact::before {
+    display: none !important;
+}
+
+/* 🌟 鼠标悬浮（Hover）：卡片平滑上浮，边框图片亮度提升并泛出金黄辉光 */
+.recap-artifact:hover {
+    transform: translateY(-12px);
+    background-image: url("../image/边框.png") !important;
+    filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.7)) 
+            drop-shadow(0 0 15px rgba(201, 160, 84, 0.4)) 
+            brightness(1.12);
+}
+
+/* 🌟 鼠标点击按下（Active）：轻微沉降反馈，边框图片稳固锁定 */
+.recap-artifact:active {
+    transform: translateY(-6px) scale(0.98);
+}
+
+.artifact-image-wrap {
+    width: 150px;
+    height: 180px;
+    margin: 0 auto 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.artifact-image-wrap img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: grayscale(1) sepia(.22) brightness(.9);
+    opacity: .82;
+    transition: transform .55s ease, opacity .45s ease, filter .45s ease;
+}
+
+.recap-artifact:hover .artifact-image-wrap img {
+    transform: scale(1.07);
+    opacity: 1;
+    filter: grayscale(.45) sepia(.28) brightness(1);
+}
+
+.artifact-name {
+    font-size: 19px;
+    letter-spacing: 5px;
+    margin-bottom: 7px;
+}
+
+.artifact-person {
+    color: #b89570;
+    font-size: 12px;
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+}
+
+.artifact-line {
+    color: rgba(233,221,203,.45);
+    font-size: 11px;
+    letter-spacing: 2px;
+}
+
+/* ==========================================================================
+   🌸 右下角“进入大观园全景”按钮（框体图片背景版）
+   ========================================================================== */
+.recap-map-btn {
+    position: absolute;
+    right: 4vw;
+    bottom: 4vh;
+    z-index: 3;
+    
+    /* 1. 尺寸与内边距调整，为图片边框留出空间 */
+    min-width: 240px;
+    height: 65px;
+    padding: 0 28px;
+    
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* 2. 清除默认线条与背景 */
+    border: none !important;
+    outline: none !important;
+    background-color: transparent !important;
+    
+    /* 3. 🌟 引入边框图片 */
+    background-image: url("../image/corner.png") !important;
+    background-size: 100% 100% !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    
+    /* 4. 排版与字体样式 */
+    color: rgba(233, 221, 203, 0.85);
+    font-family: "Noto Serif SC", "SimSun", serif;
+    font-size: 14px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    
+    /* 5. 动画过渡与滤镜 */
+    overflow: visible;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+    transition: transform 0.3s ease, filter 0.3s ease, color 0.3s ease;
+}
+
+/* 🌟 鼠标悬浮（Hover）：变亮、向右微动并泛起辉光 */
+.recap-map-btn:hover {
+    color: #ffffff;
+    transform: translateX(4px) translateY(-2px);
+    filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.5)) brightness(1.15);
+}
+
+/* 🌟 鼠标点击按下（Active）：按压反馈 */
+.recap-map-btn:active {
+    transform: translateX(2px) scale(0.97);
+}
+
+@media (max-width: 900px) {
+    .recap-artifacts { gap: 1.5vw; }
+    .recap-artifact { width: 29vw; min-height: 300px; }
+    .artifact-image-wrap { width: 120px; height: 145px; }
+}
+
+/* ==========================================================================
+   🎬 最终全剧终黑屏谢幕专区 
+   ========================================================================== */
+#curtain-call-stage {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000000; /* 纯黑底色 */
+    z-index: 9999;       /* 确保永远覆盖在所有舞台和雾气最上层 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 3.0s ease; /* 3秒平滑而厚重的黑屏过渡 */
+}
+
+#curtain-call-stage.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* 屏幕中央的叹息谢幕文本 */
+.curtain-text {
+    color: #ffffff;
+    font-family: "Noto Serif SC", "SimSun", serif;
+    font-size: 1.4rem;
+    letter-spacing: 4px;
+    line-height: 2.2;
+    text-align: center;
+    max-width: 80%;
+    padding: 0 20px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 2.5s ease 1.5s; /* 延迟1.5秒待黑屏平稳后，文字缓缓升起浮现 */
+}
+
+#curtain-call-stage.active .curtain-text {
+    opacity: 0.85; /* 带有一丝优雅平淡的半透明视觉感 */
+    transform: translateY(0);
+}
+
+/* ==========================================================================
+   🌸 宝钗扑蝶：96px 特大号古典金边红梅流苏宫扇（纯代码 SVG 渲染）
+   ========================================================================== */
+
+/* 1. 默认状态：静止与移动时的精细红梅宫扇 */
+#catch-butterfly-stage {
+    /* 🌟 96px 超清晰大光标
+       - 28 28 代表点击热点精准锁定在扇面中心偏左上的位置，符合玩家直觉。
+    */
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 96 96'><g transform='rotate(-20 48 48)'><line x1='48' y1='45' x2='48' y2='78' stroke='%234a2e1b' stroke-width='4' stroke-linecap='round'/><path d='M48,12 C24,12 16,25 16,42 C16,58 28,64 48,64 C68,64 80,58 80,42 C80,25 72,12 48,12 Z' fill='rgba(255,254,250,0.85)' stroke='%23c9a054' stroke-width='2.5' filter='drop-shadow(0px 3px 6px rgba(0,0,0,0.25))'/><path d='M48,16 C28,16 20,27 20,42 C20,56 30,60 48,60 C66,60 76,56 76,42 C76,27 68,16 48,16 Z' fill='none' stroke='rgba(201,160,84,0.3)' stroke-width='1' stroke-dasharray='4,4'/><path d='M35,45 Q42,42 48,36 Q55,42 62,40' fill='none' stroke='%238c6239' stroke-width='1.5'/><circle cx='48' cy='36' r='3.5' fill='%238c241e'/><circle cx='41' cy='43' r='2.5' fill='%23b53a33'/><circle cx='54' cy='39' r='2' fill='%23b53a33'/><circle cx='36' cy='45' r='1.5' fill='%23ebdcc5'/><line x1='48' y1='36' x2='46' y2='31' stroke='%238c6239' stroke-width='0.8'/><circle cx='46' cy='30' r='1' fill='%238c241e'/><circle cx='48' cy='78' r='3.5' fill='%230e7a4d' filter='drop-shadow(0px 1px 2px rgba(0,0,0,0.3))'/><path d='M48,81 Q51,84 48,89 Q45,84 48,81 M48,81 L48,93' fill='none' stroke='%238c241e' stroke-width='3' stroke-linecap='round'/></g></svg>") 28 28, auto !important;
+}
+
+/* 2. 扑击状态：点击鼠标瞬间，扇子产生大幅度向下“扇击”的物理动效 */
+#catch-butterfly-stage:active {
+    /* 🌟 击打反馈：
+       - 角度从 -20deg 瞬间偏转为 12deg。
+       - 扇子同时向右下方产生一个俯冲下压，完美模拟手臂挥扇向下拍打的力度。
+    */
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'><g transform='rotate(12 48 48) translate(5, 8)'><line x1='48' y1='45' x2='48' y2='78' stroke='%234a2e1b' stroke-width='4' stroke-linecap='round'/><path d='M48,12 C24,12 16,25 16,42 C16,58 28,64 48,64 C68,64 80,58 80,42 C80,25 72,12 48,12 Z' fill='rgba(255,254,250,0.92)' stroke='%23c9a054' stroke-width='2.5' filter='drop-shadow(0px 5px 8px rgba(0,0,0,0.35))'/><path d='M48,16 C28,16 20,27 20,42 C20,56 30,60 48,60 C66,60 76,56 76,42 C76,27 68,16 48,16 Z' fill='none' stroke='rgba(201,160,84,0.3)' stroke-width='1' stroke-dasharray='4,4'/><path d='M35,45 Q42,42 48,36 Q55,42 62,40' fill='none' stroke='%238c6239' stroke-width='1.5'/><circle cx='48' cy='36' r='3.5' fill='%238c241e'/><circle cx='41' cy='43' r='2.5' fill='%23b53a33'/><circle cx='54' cy='39' r='2' fill='%23b53a33'/><circle cx='36' cy='45' r='1.5' fill='%23ebdcc5'/><line x1='48' y1='36' x2='46' y2='31' stroke='%238c6239' stroke-width='0.8'/><circle cx='46' cy='30' r='1' fill='%238c241e'/><circle cx='48' cy='78' r='3.5' fill='%230e7a4d' filter='drop-shadow(0px 1px 2px rgba(0,0,0,0.3))'/><path d='M48,81 Q51,84 48,89 Q45,84 48,81 M48,81 L48,93' fill='none' stroke='%238c241e' stroke-width='3' stroke-linecap='round'/></g></svg>") 33 36, auto !important;
+}
+
+/* 3. 锁定互动元素，确保鼠标在蝴蝶和花圃容器悬停时，依然展示精美的大流苏扇子 */
+#catch-butterfly-stage .live-butterfly,
+#catch-butterfly-stage #butterfly-container {
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'><g transform='rotate(-20 48 48)'><line x1='48' y1='45' x2='48' y2='78' stroke='%234a2e1b' stroke-width='4' stroke-linecap='round'/><path d='M48,12 C24,12 16,25 16,42 C16,58 28,64 48,64 C68,64 80,58 80,42 C80,25 72,12 48,12 Z' fill='rgba(255,254,250,0.85)' stroke='%23c9a054' stroke-width='2.5' filter='drop-shadow(0px 3px 6px rgba(0,0,0,0.25))'/><path d='M48,16 C28,16 20,27 20,42 C20,56 30,60 48,60 C66,60 76,56 76,42 C76,27 68,16 48,16 Z' fill='none' stroke='rgba(201,160,84,0.3)' stroke-width='1' stroke-dasharray='4,4'/><path d='M35,45 Q42,42 48,36 Q55,42 62,40' fill='none' stroke='%238c6239' stroke-width='1.5'/><circle cx='48' cy='36' r='3.5' fill='%238c241e'/><circle cx='41' cy='43' r='2.5' fill='%23b53a33'/><circle cx='54' cy='39' r='2' fill='%23b53a33'/><circle cx='36' cy='45' r='1.5' fill='%23ebdcc5'/><line x1='48' y1='36' x2='46' y2='31' stroke='%238c6239' stroke-width='0.8'/><circle cx='46' cy='30' r='1' fill='%238c241e'/><circle cx='48' cy='78' r='3.5' fill='%230e7a4d' filter='drop-shadow(0px 1px 2px rgba(0,0,0,0.3))'/><path d='M48,81 Q51,84 48,89 Q45,84 48,81 M48,81 L48,93' fill='none' stroke='%238c241e' stroke-width='3' stroke-linecap='round'/></g></svg>") 28 28, auto !important;
+}
+
+/* ==========================================================================
+   🌸 薛宝钗篇：场景图（image_e599c6.jpg）专属真身局部发光定位
+   ========================================================================== */
+
+/* 1. 局部发光层共有基础属性（确保在视频上方，平时透明） */
+.local-glow-element {
+    position: absolute;
+    cursor: pointer;
+    z-index: 999 !important; /* 🌟 极高层级，确保绝对在视频层上方，能被鼠标触发和点击 */
+    opacity: 0;
+    transition: opacity 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    pointer-events: auto; /* 确保接收鼠标事件 */
+}
+
+/* 2. 左侧【冷香丸茶】局部发光 */
+#glow-tea {
+    left: 430px;       /* ⬅️ 左右位置（适配 image_e599c6.jpg 左侧案头白瓷茶盏） */
+    top: 680px;        /* ⬆️ 上下位置 */
+    width: 150px;      /* ↔️ 宽度 */
+    height: 100px;     /* ↕️ 高度 */
+    background: radial-gradient(ellipse at center, rgba(135, 206, 250, 0.65) 0%, rgba(100, 149, 237, 0.15) 60%, rgba(0,0,0,0) 80%);
+    filter: blur(10px);
+}
+#glow-tea:hover {
+    opacity: 1; /* 鼠标悬浮时丝滑显现幽蓝莹光 */
+}
+
+/* 3. 右侧【案头诗集】局部发光 */
+#glow-book {
+    left: 680px;       /* ⬅️ 左右位置（适配宝钗右手边正在翻阅的诗稿与桌上的墨砚） */
+    top: 620px;        /* ⬆️ 上下位置 */
+    width: 200px;      /* ↔️ 宽度 */
+    height: 120px;     /* ↕️ 高度 */
+    background: radial-gradient(ellipse at center, rgba(212, 175, 55, 0.65) 0%, rgba(212, 175, 55, 0.15) 50%, rgba(0,0,0,0) 80%);
+    filter: blur(8px);
+}
+#glow-book:hover {
+    opacity: 1; /* 鼠标悬浮时丝滑显现温润暖金光 */
+}
+
+/* 4. 中部【薛宝钗】真身局部发光 */
+#glow-baochai {
+    left: 600px;       /* ⬅️ 左右位置（完美笼罩图中宝钗的坐姿） */
+    top: 300px;        /* ⬆️ 上下位置 */
+    width: 200px;      /* ↔️ 宽度 */
+    height: 430px;     /* ↕️ 高度 */
+    background: radial-gradient(ellipse at center, rgba(255, 240, 245, 0.7) 0%, rgba(219, 112, 147, 0.15) 55%, rgba(0,0,0,0) 80%);
+    filter: blur(15px);
+    border-radius: 50% / 50% 50% 50% 50%; /* 契合坐姿轮廓 */
+}
+#glow-baochai:hover {
+    opacity: 1; /* 鼠标悬浮时丝滑显现牡丹粉白月光 */
+}
+
+/* ================= 大观园全景图舞台 ================= */
+#dagwanyuan-stage {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #000;
+    z-index: 1000; /* 高于常规舞台 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+}
+
+#dagwanyuan-container {
+    position: relative;
+    width: 100vw; height: 100vh;
+}
+
+#dagwanyuan-map {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    /* 镜头拉近与复位的平滑动画 */
+    transition: transform 2.5s cubic-bezier(0.25, 1, 0.5, 1), filter 2s ease;
+    transform-origin: center center;
+}
+
+/* 全景图热点呼吸灯效果 */
+.map-hotspot {
+    position: absolute;
+    width: 110px; height: 110px;
+    margin-left: -55px; margin-top: -55px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    background: radial-gradient(circle, rgba(212, 175, 55, 0.45) 0%, rgba(0,0,0,0) 70%);
+    border: 1px dashed rgba(212, 175, 55, 0.85);
+    box-shadow: 0 0 25px rgba(212, 175, 55, 0.6);
+    animation: pulseGlow 2s infinite alternate;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.3s ease, opacity 0.5s ease;
+}
+
+.map-hotspot:hover {
+    transform: scale(1.15);
+    background: radial-gradient(circle, rgba(212, 175, 55, 0.75) 0%, rgba(0,0,0,0) 80%);
+}
+
+.hotspot-label {
+    color: #f1f5f9;
+    font-size: 15px;
+    font-family: "Noto Serif SC", "SimSun", serif;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+    pointer-events: none;
+}
+
+@keyframes pulseGlow {
+    from { opacity: 0.5; }
+    to { opacity: 1; }
+}
+
+#map-hint-ui {
+    position: absolute;
+    bottom: 40px; left: 50%;
+    transform: translateX(-50%);
+    color: #e2e8f0;
+    font-family: "Noto Serif SC", "SimSun", serif;
+    font-size: 15px;
+    letter-spacing: 3px;
+    pointer-events: none;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+    transition: opacity 0.5s ease;
+}
+
+/* ================= 全景图专用视频舞台 ================= */
+#map-video-stage {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #000;
+    z-index: 1001; /* 最高层级 */
+    opacity: 0;
+    transition: opacity 1s ease;
+}
+
+#dagwanyuan-scene-video {
+    width: 100vw;
+    height: 100vh;
+    object-fit: contain; /* 保持视频原画面比例，居中且不裁切 */
+    position: absolute;
+    top: 0; left: 0;
+}
+
+#back-to-map-btn {
+    position: absolute;
+    right: 40px; 
+    bottom: 40px;
+    z-index: 1002;
+    
+    /* 1. 尺寸与内边距：为边框纹理留出空间 */
+    min-width: 260px;
+    height: 50px;
+    padding: 0 24px;
+    
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* 2. 清除默认背景与线条 */
+    border: none !important;
+    outline: none !important;
+    background-color: transparent !important;
+    
+    /* 3. 🌟 插入图片边框（根据实际图片路径修改图片文件名） */
+    background-image: url("../image/corner.png") !important;
+    background-size: 100% 100% !important; /* 确保框图完整铺满按钮 */
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    
+    /* 4. 字体与文字排版 */
+    color: hsla(58, 33%, 83%, 0.811);
+    font-family: "Noto Serif SC", "SimSun", serif;
+    font-size: 15px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    
+    /* 5. 阴影与过渡动画 */
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+    transition: transform 0.3s ease, filter 0.3s ease, color 0.3s ease;
+}
+
+/* 🌟 悬浮状态：微抬并泛起金光/亮光 */
+#back-to-map-btn:hover {
+    color: #ffffff;
+    transform: translateY(-2px);
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.8)) brightness(1.15);
+}
+
+/* 🌟 按下状态：沉降反馈 */
+#back-to-map-btn:active {
+    transform: scale(0.96) translateY(0);
+}
+#curtain-call-stage {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+/* ================= 谢幕黑屏与右下角按钮 ================= */
+#curtain-call-stage {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #000;
+    z-index: 9999 !important; /* 确保高于一切图层 */
+    display: none;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+
+/* ================= 双视频平移转场样式 ================= */
+#map-video-stage {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #000;
+    z-index: 1001;
+    overflow: hidden; /* 隐藏切出屏幕的视频 */
+}
+
+/* ================= 双视频平移+渐入渐出转场样式 ================= */
+#map-video-stage {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #000;
+    z-index: 1001;
+    overflow: hidden;
+}
+
+.map-video-player {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    object-fit: contain;
+    /* 同时对位移(transform)和透明度(opacity)应用平滑过渡 (1秒) */
+    transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1), opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, opacity;
+}
+
+/* 状态 1：当前播放中（完全显示，居中） */
+.video-active {
+    transform: translateX(0);
+    opacity: 1;
+    z-index: 2;
+}
+
+/* 状态 2：右侧等待切入（位于右侧，透明） */
+.video-next-right {
+    transform: translateX(100%);
+    opacity: 0;
+    z-index: 1;
+}
+
+/* 状态 3：左侧平移切出（向左滑出，同时淡出透明） */
+.video-exit-left {
+    transform: translateX(-100%);
+    opacity: 0;
+    z-index: 1;
+}
+
+/* 定位状态类 */
+.video-active {
+    transform: translateX(0); /* 居中显示 */
+    z-index: 2;
+}
+
+.video-next-right {
+    transform: translateX(100%); /* 在屏幕右侧等待切入 */
+    z-index: 1;
+}
+
+.video-exit-left {
+    transform: translateX(-100%); /* 向左滑出屏幕 */
+    z-index: 1;
+}
+
+/* ================= 无缝动态长卷推镜样式 ================= */
+#map-video-stage {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #000;
+    z-index: 1001;
+    overflow: hidden; /* 隐藏超出屏幕外的画卷部分 */
+}
+
+.map-video-player {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    object-fit: cover; /* 铺满屏幕，避免画卷上下/左右留有黑边缝隙 */
+    opacity: 1 !important; /* 保持 100% 完全可见，绝不淡出或黑屏 */
+    /* 4.0秒超平缓推镜动画 */
+    transition: transform 4.0s cubic-bezier(0.25, 1, 0.5, 1);
+    will-change: transform;
+}
+
+/* 状态 1：当前画卷（在屏幕正中央） */
+.video-active {
+    transform: translateX(0) !important;
+    z-index: 2;
+}
+
+/* 状态 2：下一个画卷（紧贴在屏幕正右侧，等待推入） */
+.video-next-right {
+    transform: translateX(100%) !important;
+    z-index: 3;
+}
+
+/* 状态 3：上一个画卷（向左滑出屏幕外） */
+.video-exit-left {
+    transform: translateX(-100%) !important;
+    z-index: 1;
+}
+
+/* 返回剧情回顾时先保持整页黑屏，避免短暂闪出原剧情/其他器物界面 */
+html.recap-loading body {
+    opacity: 0 !important;
+}
+html.recap-loading {
+    background: #000 !important;
+}
+
+@media (max-width: 700px) {
+    .curtain-choice-wrap {
+        bottom: 5vh;
+        padding: 0 5vw;
+        gap: 12px;
+    }
+    .curtain-choice-btn {
+        min-width: 0;
+        width: 42vw;
+        padding: 13px 10px;
+        font-size: 13px;
+        letter-spacing: 2px;
+    }
+}
+/* ==========================================================================
+   🏰 大观园入口按钮（整张古风框图自适应 + 边框常驻闪烁版）
+   ========================================================================== */
+#enter-dagwanyuan-btn {
+    position: absolute;
+    right: 60px;
+    bottom: 15px;
+    z-index: 10000;
+    pointer-events: auto;
+    
+    padding: 16px 36px;
+    
+    /* 清除原本的黄色线条边框与默认背景 */
+    background-color: transparent;
+    border: none !important;
+    outline: none;
+    
+    color: #e5cbab;
+    font-family: "Noto Serif SC", "SimSun", serif;
+    font-size: 16px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    
+    /* 🌟 核心：载入整张边框图片，并确保完全铺满 */
+    background-image: url("../image/corner.png") !important;
+    background-size: 120% 120% !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    
+    /* 替换原有的 btnPulse 动画，改为靠 filter 实现柔和呼吸与边框常驻 */
+    animation: none;
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.7));
+    transition: transform 0.25s ease, filter 0.3s ease;
+    backdrop-filter: none;
+}
+
+/* 🌟 悬浮状态：暗金黄光晕与微抬 */
+#enter-dagwanyuan-btn:hover {
+    background-color: transparent;
+    border: none;
+    transform: translateY(-3px);
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.957)) brightness(1.15);
+}
+
+/* 🌟 点击（按下）时的金黄色瞬间闪烁 */
+#enter-dagwanyuan-btn:active {
+    animation: btnGoldFlash 0.35s ease-in-out !important;
+}
+
+
+
+/* ==========================================================================
+   🌸 剧情回顾底部分支按钮（防裁切、边框文字绝对锁定版）
+   ========================================================================== */
+.curtain-choice-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* 1. 明确固定尺寸或边距，确保边框图有足够的空间渲染 */
+    min-width: 200px;
+    height: 66px;
+    padding: 0 30px;
+    
+    /* 2. 基础文字与排版 */
+    color: #e5cbab;
+    font-family: "Noto Serif SC", "SimSun", serif;
+    font-size: 16px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    
+    /* 3. 彻底清除默认样式与背景 */
+    border: none !important;
+    outline: none !important;
+    background-color: transparent !important;
+    
+    /* 4. 🌟 边框图直接锁定在按钮背景上 */
+    background-image: url("../image/corner.png") !important;
+    background-size: 120% 120% !important; /* 改为 contain，防止花边拉伸超出按钮 */
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    
+    /* 5. 🔴 关键修复：绝对不能加 overflow: hidden，否则鼠标交互时边框会被切掉 */
+    overflow: visible !important; 
+    
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+    transition: transform 0.25s ease, filter 0.3s ease, color 0.25s ease;
+    backdrop-filter: none;
+}
+
+/* 🌟 框内金光闪烁层（限定在边框内部，不影响外框） */
+.curtain-choice-btn::before {
+    content: "";
+    position: absolute;
+    inset: 4px; /* 留出 4px 边距，确保金光只在框内，不溢出到外边框上 */
+    
+    background-color: #ffffff00;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 0;
+    
+    mix-blend-mode: soft-light;
+    transition: opacity 0.25s ease;
+    border-radius: 2px;
+}
+
+/* 确保按钮内的文字层级高于金光遮罩 */
+.curtain-choice-btn * {
+    position: relative;
+    z-index: 1;
+}
+
+/* 🌟 悬浮状态（Hover）：边框完全原样保留，仅微抬并提升辉光 */
+.curtain-choice-btn:hover {
+    color: #ffffff;
+    transform: translateY(-2px);
+    filter: drop-shadow(0 0 12px rgb(247, 247, 246)) brightness(1.1);
+}
+
+.curtain-choice-btn:hover::before {
+    opacity: 0.3;
+}
+
+/* 🌟 点击/按下状态（Active）：边框不动，仅产生按压缩放与框内闪烁 */
+.curtain-choice-btn:active {
+    transform: scale(0.97) translateY(0);
+}
+
+.curtain-choice-btn:active::before {
+    opacity: 0.6;
+}
+
+/* 💡 确保动画结束后停留在最后一帧，而不是复位 */
+.baochai-stage-enter {
+    animation: fadeIn 1s ease forwards; 
+}

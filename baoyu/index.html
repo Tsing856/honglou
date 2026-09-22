@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>红楼·物语 - 贾宝玉篇</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="hint-ui">
+        <span id="guide-text">【第一步】轻触内页通灵宝玉，释放其封存的顽石记忆...</span>
+    </div>
+
+    <div id="book-stage" class="chinese-desk-stage">
+        <!-- 移除了原本的封面和封底，直接显示展开的内页书本 -->
+        <div class="book-3d book-open-active" id="book-entity">
+            <div class="book-pages-container">
+                <div class="book-page-left">
+                    <div class="vertical-text">
+                        大荒山无稽崖下一块顽石，历经幻境，<br>
+                        化为落胎时衔在口中的通灵宝玉。它铭<br>
+                        刻着‘莫失莫忘，仙寿恒昌’。它是他<br>
+                        富贵温柔乡的见证，也是缚住他神瑛侍<br>
+                        者前盟的丝线。溺于女儿香，悲于千红<br>
+                        一哭，终归是一场空空大梦...
+                    </div>
+                </div>
+                <div class="book-page-right">
+                    <div class="book-sketch-wrapper">
+                        <img src="../image/baoyu_sketch.png" alt="贾宝玉白描线稿" class="baochai-book-sketch">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="awakening-stage" class="chinese-desk-stage">
+        <div class="lock-container" id="gold-lock">
+            <div class="ritual-circle"></div>
+            <div class="lock-sketch" id="lock-sketch">
+                <img src="../image/baoyu_sketch.png" alt="通灵宝玉线稿" class="awakening-img-sketch">
+                <span class="sketch-text">触碰古玉 唤醒顽石</span>
+            </div>
+            <div class="lock-colored" id="lock-colored">
+                <svg width="100%" height="100%" viewBox="0 0 380 540" class="mask-svg-container">
+                    <defs>
+                        <mask id="center-spread-mask" maskUnits="userSpaceOnUse">
+                            <circle id="mask-circle" cx="190" cy="270" r="0" fill="white" />
+                        </mask>
+                    </defs>
+                    <image href="../image/baoyu.png" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" mask="url(#center-spread-mask)"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div id="scene-stage">
+        <div id="viewport">
+            <div id="scroll-container">
+                <div class="layer layer-video">
+                    <video id="scene-video" src="../image/baoyu_fadai.mp4" autoplay loop muted></video>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="story-stage">
+        <img id="story-bg" src="../image/baoyu_juqing.jpg" alt="剧情演绎背景图">
+        <div id="dialogue-box">
+            <div id="dialogue-name">贾宝玉</div>
+            <div id="dialogue-text">正在初始化剧情...</div>
+            <div id="dialogue-next-btn"><span>▼</span></div>
+        </div>
+    </div>
+
+    <div id="catch-butterfly-stage">
+        <div class="perfume-vessel vessel-basin" id="vessel-first">
+            <svg class="vessel-svg" viewBox="0 0 100 100">
+                <ellipse cx="50" cy="72" rx="35" ry="10" fill="rgba(0,0,0,0.4)" />
+                <ellipse cx="50" cy="65" rx="38" ry="14" fill="#4d7a64" stroke="#335243" stroke-width="2" />
+                <ellipse cx="50" cy="60" rx="36" ry="12" fill="#5c8a73" />
+                <ellipse cx="50" cy="58" rx="34" ry="10" fill="#a3cfb9" class="water-wave-effect" />
+                <ellipse cx="50" cy="56" rx="36" ry="11" fill="none" stroke="#d5ebd9" stroke-width="1.5" opacity="0.6" />
+            </svg>
+            <span class="vessel-label">青瓷淘洗盆</span>
+        </div>
+
+        <div class="perfume-vessel vessel-bowl" id="vessel-second">
+            <svg class="vessel-svg" viewBox="0 0 100 100">
+                <ellipse cx="50" cy="70" rx="32" ry="8" fill="rgba(0,0,0,0.5)" />
+                <path d="M 20,48 C 20,74 80,74 80,48 Z" fill="#cbd5e1" stroke="#94a3b8" stroke-width="2.5" />
+                <ellipse cx="50" cy="48" rx="30" ry="10" fill="#94a3b8" />
+                <ellipse cx="50" cy="50" rx="24" ry="8" fill="#881337" opacity="0.9" />
+                <g class="pestle-anim">
+                    <rect x="44" y="20" width="12" height="36" rx="6" fill="#78350f" transform="rotate(-15 50 38)" stroke="#451a03" stroke-width="1.5" />
+                </g>
+            </svg>
+            <span class="vessel-label">白砂研钵</span>
+        </div>
+
+        <div class="perfume-vessel vessel-dish" id="vessel-third">
+            <svg class="vessel-svg" viewBox="0 0 100 100">
+                <ellipse cx="50" cy="72" rx="28" ry="8" fill="rgba(0,0,0,0.6)" />
+                <ellipse cx="50" cy="65" rx="30" ry="12" fill="#1e3a8a" stroke="#fbbf24" stroke-width="2.5" />
+                <ellipse cx="50" cy="56" rx="28" ry="10" fill="#0f172a" stroke="#fbbf24" stroke-width="1" />
+                <ellipse cx="50" cy="55" rx="26" ry="9" fill="#dc2626" class="rouge-paste-glow" />
+                <ellipse cx="46" cy="53" rx="8" ry="2.5" fill="rgba(255,255,255,0.4)" />
+            </svg>
+            <span class="vessel-label">胭脂玉盒</span>
+        </div>
+
+        <div id="perfume-progress-bar">
+            <div id="perfume-progress-fill"></div>
+        </div>
+
+        <div id="butterfly-container"></div>
+
+        <div id="catch-toast-ui">
+            <div id="toast-title">古法制脂</div>
+            <div id="toast-content">请点击空中飘落的红茉莉花瓣，洗练精制胭脂...</div>
+        </div>
+    </div>
+
+    <div id="video-stage" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 999; transition: opacity 1s ease;">
+        <video id="transition-video" src="../image/baoyu_fenxiang.mp4" style="width: 100%; height: 100%; object-fit: cover;" playsinline></video>
+    </div>
+
+    <div id="curtain-call-stage">
+        <div class="curtain-text">属于贾宝玉的富贵温柔、古玉的大梦记忆，到这里便先落下了帷幕。</div>
+    </div>
+
+    <div id="fog-overlay">
+        <svg width="100%" height="100%" style="position:absolute; top:0; left:0;">
+            <defs>
+                <filter id="true-fog-filter" x="-20%" y="-20%" width="140%" height="140%">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="4" result="noise" />
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="120" xChannelSelector="R" yChannelSelector="G" />
+                </filter>
+            </defs>
+        </svg>
+        <div class="true-fog-shroud mist-layer-1"></div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

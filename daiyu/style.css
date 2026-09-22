@@ -1,0 +1,742 @@
+/* ================= 1. 全局初始化与基础舞台 ================= */
+* { box-sizing: border-box; }
+body, html {
+    margin: 0; padding: 0;
+    width: 100vw; height: 100vh;
+    overflow: hidden; background-color: #1a120e; 
+    font-family: "Noto Serif SC", "Source Han Serif CN", "SimSun", serif; 
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ================= 提示 UI：初始黑木金丝质感 ================= */
+#hint-ui {
+    position: fixed; top: 4vh; left: 4vw;
+    color: #cbd5e1; 
+    background: rgba(25, 20, 18, 0.93); 
+    padding: 20px 30px; 
+    border-radius: 2px; 
+    border-left: 4px solid #a6846a; /* 古黄铜色边框 */
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6); 
+    pointer-events: none; 
+    font-size: 14px; line-height: 1.8; letter-spacing: 2px; z-index: 100;
+    backdrop-filter: blur(5px); 
+    transition: opacity 0.5s ease, background 0.6s ease, color 0.6s ease, border 0.6s ease;
+}
+
+/* 宣纸淡青 UI 风格 (漫游期及之后使用，完美融入林黛玉的竹林意境) */
+#hint-ui.scene-style {
+    width: 32vw; 
+    background: rgba(245, 241, 233, 0.94); /* 宣纸素白 */
+    color: #3a2c1e; /* 熟褐色字 */
+    border: 1px solid #9e846b;
+    border-left: 5px solid #3f5e4d; /* 潇湘翠竹绿，突显黛玉篇主题 */
+    box-shadow: 0 12px 35px rgba(42, 31, 21, 0.12); 
+    font-family: "SimSun", "Noto Serif SC", serif;
+    font-weight: 500;
+}
+
+#hint-ui.scene-style b {
+    color: #a13d37 !important; /* 黛玉绛珠泪痕红 */
+    font-size: 15px;
+    letter-spacing: 1px;
+    display: inline-block;
+    margin-bottom: 4px;
+}
+
+/* 逼真的红木桌面背景（SVG 矢量木纹） */
+.chinese-desk-stage {
+    position: absolute; width: 100vw; height: 100vh; top: 0; left: 0;
+    display: flex; justify-content: center; align-items: center;
+    background-color: #26140a;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100' height='100' fill='%23361c0e'/%3E%3Crect width='100' height='100' filter='url(%23noise)'/%3E%3C/svg%3E");
+    box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.9); 
+}
+
+/* ================= 2. 书籍翻页阶段 ================= */
+#book-stage { 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    width: 100vw; 
+    height: 100vh; 
+    background: #2b1f1d; 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    z-index: 10; 
+    margin: 0; 
+    padding: 0;
+}
+
+#book-entity {
+    display: flex; 
+    width: 960px; 
+    height: 600px; 
+    background: #ebdcc5; 
+    box-shadow: 0 20px 45px rgba(0,0,0,0.7); 
+    border-radius: 2px; 
+    position: relative; 
+    box-sizing: border-box; 
+    transition: all 0.8s ease;
+}
+
+.book-page-left, .book-page-right {
+    width: 50%; 
+    height: 100%; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    padding: 60px; 
+    box-sizing: border-box; 
+    position: relative;
+}
+
+.book-spine-line {
+    position: absolute; 
+    left: 50%; 
+    top: 0; 
+    width: 2px; 
+    height: 100%; 
+    background: rgba(0,0,0,0.06); 
+    box-shadow: 0 0 8px rgba(0,0,0,0.15); 
+    z-index: 5; 
+    transform: translateX(-50%);
+}
+
+.vertical-text { 
+    writing-mode: vertical-rl; 
+    font-family: 'KaiTi', '楷体', serif; 
+    font-size: 20px; 
+    color: #2c2523; 
+    line-height: 2.3; 
+    letter-spacing: 5px; 
+    height: 85%; 
+}
+
+/* 🟢 修复：林黛玉白描线稿专有高保真滤镜 */
+.daiyu-book-sketch { 
+    max-width: 100%; 
+    max-height: 100%; 
+    object-fit: contain; 
+    opacity: 0.8;
+    filter: sepia(0.15) contrast(1.05);
+    transition: transform 0.4s ease, filter 0.4s ease;
+}
+.daiyu-book-sketch:hover {
+    transform: scale(1.02);
+    filter: sepia(0) contrast(1.1);
+}
+
+/* ================= 3. 线稿素帕唤醒 (第三步) ================= */
+#awakening-stage { display: none; opacity: 0; z-index: 25; transition: opacity 1s ease; }
+
+.lock-container { 
+    position: relative; 
+    width: 380px; 
+    height: 540px; 
+    cursor: pointer; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+}
+
+.ritual-circle {
+    position: absolute; 
+    width: 108%; 
+    height: 106%; 
+    border: 2px dashed rgba(161, 61, 55, 0.4); /* 改为绛痕泪红法阵 */
+    border-radius: 50%; 
+    box-shadow: 0 0 25px rgba(161, 61, 55, 0.2), inset 0 0 20px rgba(161, 61, 55, 0.15); 
+    z-index: 1;
+    animation: rotateCircle 20s linear infinite; 
+    transition: opacity 0.8s ease, transform 0.8s ease; 
+}
+.ritual-circle::before {
+    content: ""; position: absolute; top: -6px; left: -6px; right: -6px; bottom: -6px;
+    border: 1px solid rgba(161, 61, 55, 0.15); border-radius: 50%;
+    animation: circlePulse 3s ease-in-out infinite alternate;
+}
+
+.lock-sketch { 
+    position: absolute; 
+    top: 50%; 
+    left: 50%;
+    transform: translate(-50%, -50%); 
+    width: 100%; 
+    height: 100%; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center; 
+    transition: opacity 1.2s ease; 
+    z-index: 2; 
+}
+
+.awakening-img-sketch { 
+    width: 100%;              
+    height: 100%;             
+    object-fit: contain;     
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4)); 
+}
+
+.sketch-text { 
+    position: absolute;
+    bottom: 35px;      
+    left: 50%;
+    transform: translateX(-50%); 
+    color: #baa185; 
+    font-size: 14px; 
+    letter-spacing: 4px; 
+    text-shadow: 0 2px 4px rgba(0,0,0,0.6); 
+    font-family: "SimSun", serif; 
+    white-space: nowrap; 
+}
+
+.lock-colored { 
+    position: absolute; 
+    top: 0; left: 0;
+    width: 100%; 
+    height: 100%; 
+    opacity: 0; 
+    z-index: 3; 
+    transition: opacity 0.4s ease, filter 1.5s ease; 
+    filter: drop-shadow(0 0 0px rgba(161, 61, 55, 0)); 
+}
+.mask-svg-container { 
+    width: 100%; 
+    height: 100%; 
+    display: block;
+}
+#mask-circle { transition: r 2.5s cubic-bezier(0.1, 0.8, 0.25, 1); }
+
+/* 神圣泪光激活：由红黄双色外发光包裹 */
+.lock-colored.bleed-active { 
+    opacity: 1; 
+    filter: drop-shadow(0 0 25px rgba(220, 100, 100, 0.75)) drop-shadow(0 0 50px rgba(161, 61, 55, 0.4)); 
+}
+
+@keyframes rotateCircle { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes circlePulse { 0% { transform: scale(0.98); opacity: 0.3; } 100% { transform: scale(1.02); opacity: 0.8; } }
+
+/* ================= 4. 潇湘云雾转场粒子 ================= */
+#fog-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 1000; display: none; }
+.true-fog-shroud {
+    position: absolute; width: 140vw; height: 140vh; top: -20vh; left: -20vw;
+    background: radial-gradient(circle, rgba(245,242,235,0.96) 0%, rgba(232,225,212,0.7) 45%, rgba(26,18,14,0) 70%);
+    filter: url(#true-fog-filter); opacity: 0; transform: scale(0.5); 
+}
+#fog-overlay.fog-active { display: block; }
+#fog-overlay.fog-active .mist-layer-1 { animation: gatherAndDissolve1 5s cubic-bezier(0.25, 1, 0.3, 1) forwards; }
+
+@keyframes gatherAndDissolve1 {
+    0% { transform: scale(0.3) rotate(0deg); opacity: 0; }
+    25% { transform: scale(1.1) rotate(15deg); opacity: 0.98; }
+    65% { transform: scale(1.15) rotate(25deg); opacity: 0.98; }
+    100% { transform: scale(1.8) rotate(60deg); opacity: 0; }
+}
+
+/* ================= 5. 3D长卷漫游视差校准 ================= */
+#scene-stage { 
+    position: absolute; 
+    width: 100vw; 
+    height: 100vh; 
+    top: 0; 
+    left: 0; 
+    display: none; 
+    opacity: 0; 
+    transition: opacity 2.0s ease; 
+    z-index: 5; 
+    background-color: #000;
+}
+#viewport { 
+    position: relative; 
+    width: 100%; 
+    height: 100%; 
+    overflow: hidden;
+    perspective: 1200px; 
+    perspective-origin: center center;
+}
+#scroll-container { 
+    position: absolute; 
+    width: 100vw; 
+    height: 100vh; 
+    left: 0; 
+    top: 0; 
+    transform-style: preserve-3d; 
+    transition: transform 0.1s ease-out; 
+}
+.layer-video { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    z-index: 1; 
+}
+#scene-video { 
+    width: 115vw; 
+    height: 115vh; 
+    object-fit: cover; 
+    transform: translate(-6.5%, -6.5%); 
+}
+
+/* ================= 6. 局部交互发光区与热区（无痕精美版） ================= */
+.local-glow-element {
+    position: absolute;
+    z-index: 2;
+    transform-style: preserve-3d;
+    transform: translateZ(20px); 
+    opacity: 0; /* 🟢 恢复隐藏：默认完全透明，不显山露水 */
+    pointer-events: none; 
+    transition: opacity 0.5s ease-in-out, filter 0.5s ease-in-out;
+}
+
+#glow-tea {
+    left: 20vw; bottom: 12vh; width: 15vw; height: 18vh;
+    background: radial-gradient(ellipse at center, rgba(163, 217, 201, 0.75) 0%, rgba(163, 217, 201, 0.15) 55%, rgba(0,0,0,0) 80%);
+    filter: blur(12px); /* 优雅的大范围柔和羽化 */
+}
+
+#glow-books {
+    left: 83vw; bottom: 24vh; width: 20vw; height: 66vh;
+    background: radial-gradient(ellipse at center, rgba(234, 229, 229, 0.676) 0%, rgba(192, 179, 178, 0.12) 50%, rgba(0,0,0,0) 60%);
+    filter: blur(10px);
+}
+
+#glow-daiyu {
+    left: 49vw; top: 35vh; width: 20vw; height: 40vh;
+    background: radial-gradient(ellipse at center, rgba(185, 165, 171, 0.7) 0%, rgba(223, 158, 155, 0.12) 60%, rgba(0,0,0,0) 80%);
+    filter: blur(15px);
+    border-radius: 50% / 40% 40% 60% 60%;
+}
+
+/* 🟢 交互热区：强制提升层级，且完全透明 */
+.interactive-element { 
+    position: absolute; 
+    cursor: pointer; 
+    z-index: 999 !important; 
+    transform-style: preserve-3d;
+    background: transparent !important; /* 🟢 恢复无痕：完全透明背景 */
+    border: none !important;             /* 🟢 恢复无痕：移除虚线调试框 */
+}
+
+.shadow-clicker {
+    transform: translateZ(150px) !important; 
+}
+
+/* 茶盏热区 (鼠标悬停时激发 glow-tea 的淡入与清晰度变化) */
+#prop-tea { 
+    left: 24vw; bottom: 15vh; width: 10vw; height: 12vh; 
+}
+#prop-tea:hover ~ #glow-tea { 
+    opacity: 1; 
+    filter: blur(8px); 
+}
+
+/* 琴谱热区 (鼠标悬停时激发 glow-books) */
+#prop-books { 
+    left: 83vw; bottom: 24vh; width: 14vw; height: 66vh; 
+}
+#prop-books:hover ~ #glow-books { 
+    opacity: 1; 
+    filter: blur(6px); 
+}
+
+/* 林黛玉人物热区 (鼠标悬停时激发 glow-daiyu) */
+.person-hotspot {
+    left: 49vw; top: 35vh; width: 20vw; height: 40vh;
+    transform: translateZ(160px) !important; 
+}
+.person-hotspot:hover ~ #glow-daiyu { 
+    opacity: 1; 
+    filter: blur(10px); 
+}
+
+/* ================= 7. 幽静古风对白框系统 ================= */
+#story-stage {
+    position: absolute;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 999;                  
+    display: none;                 
+    opacity: 0;                    
+    pointer-events: none;          
+    background: #000000;           
+    transition: opacity 1.5s ease-in-out; 
+}
+
+#story-stage.active { display: block; pointer-events: auto; }
+#story-bg { width: 100%; height: 100%; object-fit: cover; }
+
+#dialogue-box {
+    position: absolute;
+    bottom: 4vh; left: 50%;
+    transform: translateX(-50%);
+    width: 56vw; height: 20vh; min-height: 150px;
+    background: rgba(246, 242, 234, 0.95);
+    border: 3px solid #2a1f1a;     
+    outline: 1px solid #9e846b;    
+    outline-offset: -5px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+    padding: 35px 45px;
+    font-family: "SimSun", "Noto Serif SC", serif;
+    z-index: 1000;                 
+    opacity: 0;
+    transform: translate(-50%, 20px);
+    transition: opacity 1s ease 0.8s, transform 1s cubic-bezier(0.25, 1, 0.3, 1) 0.8s; 
+}
+
+#story-stage.fade-in #dialogue-box { opacity: 1; transform: translate(-50%, 0); }
+
+/* 🟢 修复：名字框改为黛玉专属“绛珠红/潇湘竹绿”的淡雅设计，彻底摒弃宝钗红 */
+#dialogue-name {
+    position: absolute;
+    top: -18px; left: 35px;
+    background: #3f5e4d;   /* 黛玉竹林黛绿 */
+    color: #f6f2ea;               
+    padding: 5px 22px;
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    border: 1px solid #2a1f1a;
+    transition: background 0.4s ease; 
+}
+
+#dialogue-text {
+    color: #2c1e13; font-size: 18px; line-height: 1.8; letter-spacing: 2px; font-weight: 500; text-align: left;
+}
+
+#dialogue-next-btn {
+    position: absolute; bottom: 20px; right: 25px; cursor: pointer;
+    color: #3f5e4d; font-size: 18px; width: 35px; height: 35px;
+    display: flex; justify-content: center; align-items: center;
+    border: 1px dashed rgba(63, 94, 77, 0.5);
+    border-radius: 50%; z-index: 1001;                 
+    animation: dialogArrowPulse 1.2s ease-in-out infinite alternate;
+}
+@keyframes dialogArrowPulse { 0% { opacity: 0.4; transform: translateY(0); } 100% { opacity: 1; transform: translateY(4px); } }
+
+/* ================= 8. 彻底重构：【黛玉试琴】古典弦韵小游戏 ================= */
+/* 修改古琴舞台背景 */
+#play-qin-stage {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    /* 🌟 改为红楼古风渐变：中心稍亮黑金，四周深沉黑褐 */
+    background: radial-gradient(circle at center, #2c1e18 0%, #120c0a 70%, #080504 100%);
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#play-qin-stage.active { display: block; }
+#qin-bg { width: 100%; height: 100%; object-fit: cover; user-select: none; }
+
+/* 🎵 唯美古琴发光音符样式 (契合古谱意境) */
+.qin-string-note { 
+    position: absolute; 
+    width: 60px; 
+    height: 60px; 
+    cursor: pointer; 
+    z-index: 1010; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    font-family: "KaiTi", "楷体", serif;
+    font-size: 22px;
+    font-weight: bold;
+    transition: transform 0.3s cubic-bezier(0.25, 1, 0.3, 1), opacity 0.4s ease;
+}
+
+/* 翠竹冷玉绿音符特效 */
+.qin-glow-green {
+    background: radial-gradient(circle, #f0f7f4 20%, rgba(163, 217, 201, 0.9) 65%, rgba(63, 94, 77, 0.4) 100%);
+    color: #244230;
+    box-shadow: 0 0 20px rgba(163, 217, 201, 0.6);
+    animation: notePulse 2s infinite alternate ease-in-out;
+}
+
+/* 琴弦上的音符只需原位微颤呼吸，不应像蝴蝶般狂乱飞舞 */
+@keyframes notePulse {
+    0% { transform: scale(0.96) translateY(-2px); box-shadow: 0 0 15px rgba(163, 217, 201, 0.4); }
+    100% { transform: scale(1.04) translateY(2px); box-shadow: 0 0 28px rgba(163, 217, 201, 0.8); }
+}
+
+/* 拨动时触发琴弦泛音扩散效果 */
+.qin-string-note .ripple-wave {
+    position: absolute;
+    width: 100%; height: 100%;
+    border: 1px solid rgba(163, 217, 201, 0.8);
+    border-radius: 50%;
+    opacity: 0;
+    transform: scale(1);
+    pointer-events: none;
+}
+.qin-string-note.note-struck {
+    transform: scale(1.3);
+    opacity: 0;
+}
+.qin-string-note.note-struck .ripple-wave {
+    animation: harmonicSpread 0.5s ease-out forwards;
+}
+@keyframes harmonicSpread {
+    0% { transform: scale(1); opacity: 0.9; }
+    100% { transform: scale(2.4); opacity: 0; }
+}
+
+/* 试琴专属古典浮层提示 */
+#qin-toast-ui {
+    position: fixed;
+    top: 5vh; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(246, 242, 234, 0.95);
+    border: 2px solid #3f5e4d;     
+    border-radius: 2px;
+    padding: 15px 35px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+    text-align: center;
+    font-family: "SimSun", serif;
+    z-index: 1050;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none !important;
+}
+
+#toast-title { color: #3f5e4d; font-size: 14px; font-weight: bold; letter-spacing: 2px; margin-bottom: 4px; }
+#toast-content { color: #2c1e13; font-size: 16px; letter-spacing: 1px; }
+
+/* ================= 9. 唯美谢幕终章 ================= */
+#curtain-call-stage {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: #000000; 
+    z-index: 9999;       
+    display: flex; flex-direction: column; 
+    justify-content: center; align-items: center;
+    opacity: 0; pointer-events: none;
+    cursor: pointer; 
+    transition: opacity 3.0s ease; 
+}
+#curtain-call-stage.active { opacity: 1; pointer-events: auto; }
+.curtain-text {
+    color: #ffffff; font-family: "Noto Serif SC", "SimSun", serif; font-size: 1.4rem;
+    letter-spacing: 4px; line-height: 2.2; text-align: center; max-width: 80%; opacity: 0;
+    transform: translateY(20px); transition: all 2.5s ease 1.5s; 
+}
+.curtain-tip {
+    color: #a13d37; font-family: "Noto Serif SC", "SimSun", serif; font-size: 0.9rem;
+    letter-spacing: 2px; margin-top: 40px; opacity: 0; transition: opacity 2.0s ease 3.5s; 
+}
+#curtain-call-stage.active .curtain-text { opacity: 0.85; transform: translateY(0); }
+#curtain-call-stage.active .curtain-tip { opacity: 0.8; }
+
+/* ==========================================================================
+   🎼 黛玉篇古琴小游戏专用样式
+   ========================================================================== */
+#qin-progress-bar {
+    position: absolute;
+    top: 10%; left: 50%;
+    transform: translateX(-50%);
+    width: 40vw; height: 10px;
+    background: rgba(40, 30, 25, 0.6);
+    border: 1px solid #a6846a;
+    border-radius: 5px;
+    overflow: hidden;
+    z-index: 1000;
+}
+#qin-progress-fill {
+    width: 0%; height: 100%;
+    background: linear-gradient(90deg, #7e9c8c, #3f5e4d);
+    transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.guqin-board {
+    position: absolute;
+    bottom: 12vh; left: 50%;
+    transform: translateX(-50%);
+    width: 75vw; height: 260px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px 0;
+    z-index: 999;
+}
+/* 琴弦基础样式 */
+.guqin-string {
+    width: 100%;
+    background: linear-gradient(to bottom, #d4af37, #aa7c11, #d4af37);
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.1s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+/* 琴弦文本提示 */
+.guqin-string span {
+    position: absolute;
+    left: -70px; top: 50%;
+    transform: translateY(-50%);
+    color: #cbd5e1;
+    font-size: 13px;
+    letter-spacing: 1px;
+    opacity: 0.6;
+    pointer-events: none;
+    font-family: "SimSun", serif;
+}
+/* 传统古琴由外向内（一弦到七弦）由粗变细 */
+.guqin-string[data-string="1"] { height: 7px; }
+.guqin-string[data-string="2"] { height: 6px; }
+.guqin-string[data-string="3"] { height: 5px; }
+.guqin-string[data-string="4"] { height: 4px; }
+.guqin-string[data-string="5"] { height: 3px; }
+.guqin-string[data-string="6"] { height: 2px; }
+.guqin-string[data-string="7"] { height: 1.5px; }
+
+/* 悬停微亮 */
+.guqin-string:hover {
+    filter: brightness(1.3);
+}
+/* 🌟 点击拨动时的震动特效 */
+.guqin-string.vibrating {
+    animation: qinStringWave 0.12s ease infinite;
+}
+@keyframes qinStringWave {
+    0% { transform: translateY(0); filter: brightness(1.6); }
+    30% { transform: translateY(-2px); }
+    70% { transform: translateY(2px); }
+    100% { transform: translateY(0); }
+}
+
+/* ==========================================================================
+   🎼 新版古琴七弦游戏核心布局与震动特效
+   ========================================================================== */
+/* ================================================================ */
+/* 古琴琴弦面板 - 🌟 核心修正：加入穿透属性，让射线完美射入 3D 容器 */
+/* ================================================================ */
+.guqin-board {
+    position: absolute;
+    bottom: 14vh; left: 50%;
+    transform: translateX(-50%);
+    width: 75vw; height: 260px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 15px 0;
+    z-index: 99;
+    
+    /* 🌟 核心新增这一行：允许鼠标交互和射线穿透这层 2D 面板，直接摸到 3D 琴弦！ */
+    pointer-events: none; 
+}
+
+/* 保证里面的字和一些底层标签不干扰穿透 */
+.guqin-string {
+    width: 100%;
+    background: linear-gradient(to bottom, #d4af37, #aa7c11, #d4af37);
+    cursor: pointer;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    
+    /* 🌟 同样确保每根 2D 弦都不阻挡鼠标射线的穿透 */
+    pointer-events: none; 
+}
+.guqin-string span {
+    position: absolute;
+    left: -75px; top: 50%;
+    transform: translateY(-50%);
+    color: #cbd5e1;
+    font-size: 13px;
+    opacity: 0.6;
+    pointer-events: none;
+    font-family: "SimSun", serif;
+}
+/* 古琴从一弦到七弦，粗细依次递减 */
+.guqin-string[data-string="1"] { height: 7px; }
+.guqin-string[data-string="2"] { height: 6px; }
+.guqin-string[data-string="3"] { height: 5px; }
+.guqin-string[data-string="4"] { height: 4px; }
+.guqin-string[data-string="5"] { height: 3px; }
+.guqin-string[data-string="6"] { height: 2px; }
+.guqin-string[data-string="7"] { height: 1.5px; }
+
+.guqin-string:hover { filter: brightness(1.3); }
+
+/* 🌟 点击时的弦音拨动震动动画 */
+.guqin-string.vibrating {
+    animation: qinStringWave 0.1s ease infinite;
+}
+@keyframes qinStringWave {
+    0% { transform: translateY(0); filter: brightness(1.5); }
+    30% { transform: translateY(-1.5px); }
+    70% { transform: translateY(1.5px); }
+    100% { transform: translateY(0); }
+}
+
+/* ==========================================================================
+   🎼 右下角通关/进入下一阶段按钮（整张古风框图自适应版）
+   ========================================================================== */
+#next-stage-btn {
+    /* 固定在页面右下角 */
+    position: fixed;
+    right: 30px;
+    bottom: 30px;
+    z-index: 9999;
+    pointer-events: auto;
+    
+    /* 调整内边距，确保文字正好落在边框内部 */
+    padding: 18px 45px;
+    
+    /* 文字样式 */
+    color: #e5cbab;
+    font-family: "Noto Serif SC", "SimSun", serif;
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 4px;
+    cursor: pointer;
+    
+    /* 清空原生边框与背景 */
+    border: none;
+    outline: none;
+    background-color: transparent;
+    
+    /* 🌟 核心：直接使用整张图片作为背景 */
+    /* 请将 images/frame.png 替换为您保存的整张边框图片路径 */
+    background-image: url("../image/corner.png");
+    background-size: 130% 130%; /* 让整张图片完全铺满按钮 */
+    background-repeat: no-repeat;
+    background-position: center;
+    
+    /* 滤镜与阴影 */
+    filter: drop-shadow(0 8px 15px rgba(0, 0, 0, 0.7));
+    transition: transform 0.2s ease, filter 0.3s ease;
+}
+
+/* 🌟 悬浮状态：暗金黄光晕 */
+#next-stage-btn:hover {
+    color: #ffffff;
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.6)) brightness(1.15);
+}
+
+/* 🌟 核心：点击（按下）时的闪烁效果 */
+#next-stage-btn:active {
+    animation: btnFlash 0.4s ease-in-out;
+}
+
+/* 🌟 爆亮金黄色闪烁动画帧定义 */
+@keyframes btnFlash {
+    0% {
+        opacity: 1;
+        filter: brightness(1) drop-shadow(0 0 0px rgba(255, 215, 0, 0));
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.85;
+        /* 金黄色超强爆亮 + 纯金外发光 */
+        filter: brightness(2.5) drop-shadow(0 0 25px rgba(255, 215, 0, 1)) drop-shadow(0 0 40px rgba(255, 180, 0, 0.8));
+        transform: scale(0.96); /* 按压凹陷感 */
+    }
+    100% {
+        opacity: 1;
+        filter: brightness(1.15) drop-shadow(0 0 10px rgba(255, 215, 0, 0.6));
+        transform: scale(1);
+    }
+}

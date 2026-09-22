@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>红楼·物语</title>
+    <style>
+        /* 全局彻底消除原生边框与高亮黑框 */
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            outline: none !important; 
+            border: none !important;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        html, body { 
+            width: 100vw; 
+            height: 100vh; 
+            overflow: hidden; 
+            background: #000; 
+        }
+        
+        #content-frame {
+            width: 100%;
+            height: 100%;
+            border: 0 !important;
+            outline: none !important;
+            display: block;
+        }
+
+        #global-audio {
+            display: none !important;
+        }
+
+        /* 右上角音乐控制面板容器 */
+        #bgm-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            
+            width: 190px;
+            height: 56px;
+            padding: 0 20px;
+            
+            /* corner.png 边框 */
+            background-image: url("image/corner.png");
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-position: center;
+            
+            /* 关键修改：将背景色改为完全透明，消除黑色矩形底框 */
+            background-color: transparent;
+            backdrop-filter: none;
+            
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.8));
+            transition: all 0.3s ease;
+        }
+
+        /* 纯图标控制按钮 */
+        #bgm-toggle-btn {
+            background: transparent !important;
+            cursor: pointer;
+            user-select: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            position: relative;
+            padding: 0;
+            transition: transform 0.2s ease;
+        }
+
+        #bgm-toggle-btn:hover {
+            transform: scale(1.15);
+        }
+
+        #bgm-toggle-btn:active {
+            transform: scale(0.92);
+        }
+
+        /* 音符图标 */
+        .icon-symbol {
+            font-size: 18px;
+            display: inline-block;
+            color: #e8d3a7;
+            transition: all 0.3s ease;
+            filter: grayscale(0) opacity(1);
+        }
+
+        /* 播放状态：高亮+旋转 */
+        .is-playing .icon-symbol {
+            filter: grayscale(0) opacity(1) drop-shadow(0 0 6px rgba(255, 215, 0, 0.9));
+            animation: spinIcon 3.5s linear infinite;
+        }
+
+        @keyframes spinIcon {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 鲜红静音斜杠 */
+        .slash-line {
+            position: absolute;
+            top: 45%;
+            left: 56%;
+            width: 22px;
+            height: 3px;
+            background-color: #f56767;
+            box-shadow: 0 0 6px rgba(239, 68, 68, 0.9), 0 0 2px #000;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            border-radius: 2px;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            opacity: 1;
+            pointer-events: none;
+        }
+
+        /* 播放状态：隐去斜杠 */
+        .is-playing .slash-line {
+            opacity: 0;
+            transform: translate(-50%, -50%) rotate(-45deg) scale(0.2);
+        }
+
+        /* 竖线分割符 */
+        .bgm-divider {
+            width: 1px;
+            height: 18px;
+            background: rgba(212, 175, 55, 0.4);
+        }
+
+        /* 音量滑杆容器 */
+        .volume-control-wrap {
+            display: flex;
+            align-items: center;
+        }
+
+        /* 音量滑杆 */
+        #volume-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 56px;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.25);
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        /* 滑块 - Chrome/Edge/Safari */
+        #volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #e8d3a7;
+            box-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        #volume-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+            background: #ffffff;
+        }
+
+        /* 滑块 - Firefox */
+        #volume-slider::-moz-range-thumb {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #e8d3a7;
+            box-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        #volume-slider::-moz-range-thumb:hover {
+            transform: scale(1.25);
+            background: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="global-audio" src="image/bgm.mp3" loop></audio>
+
+    <div id="bgm-panel">
+        <!-- 纯图标控制按钮 -->
+        <button id="bgm-toggle-btn" aria-label="Audio Toggle">
+            <span id="bgm-icon" class="icon-symbol">🎵</span>
+            <span id="bgm-slash" class="slash-line"></span>
+        </button>
+
+        <div class="bgm-divider"></div>
+
+        <!-- 音量滑杆 -->
+        <div class="volume-control-wrap">
+            <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5">
+        </div>
+    </div>
+
+    <iframe id="content-frame" src="home.html"></iframe>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const audio = document.getElementById('global-audio');
+        const bgmBtn = document.getElementById('bgm-toggle-btn');
+        const volumeSlider = document.getElementById('volume-slider');
+
+        if (audio && volumeSlider) {
+            audio.volume = parseFloat(volumeSlider.value);
+        }
+
+        function updatePlayUI(isPlaying) {
+            if (isPlaying) {
+                bgmBtn.classList.add('is-playing');
+            } else {
+                bgmBtn.classList.remove('is-playing');
+            }
+        }
+
+        bgmBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (audio.paused) {
+                audio.play().then(() => {
+                    updatePlayUI(true);
+                }).catch(err => console.warn(err));
+            } else {
+                audio.pause();
+                updatePlayUI(false);
+            }
+        });
+
+        volumeSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            audio.volume = val;
+
+            const filledPercent = val * 100;
+            volumeSlider.style.background = `linear-gradient(to right, #e8d3a7 0%, #e8d3a7 ${filledPercent}%, rgba(255, 255, 255, 0.25) ${filledPercent}%, rgba(255, 255, 255, 0.25) 100%)`;
+        });
+
+        volumeSlider.dispatchEvent(new Event('input'));
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>红楼·物语 - 薛宝钗篇</title>
+    <link rel="stylesheet" href="style.css">
+<script>
+(function () {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('recap') === '1') {
+        document.documentElement.classList.add('recap-loading');
+    }
+})();
+</script>
+</head>
+<body>
+
+    <div id="hint-ui">
+        <span id="guide-text">【第一步】轻触案上这本《红楼物语》，翻开书页...</span>
+    </div>
+
+    <div id="book-stage" style="display: flex; justify-content: center; align-items: center; width: 100vw; height: 100vh; background: #2b1f1d; position: fixed; top: 0; left: 0; z-index: 10; margin: 0; padding: 0;">
+        
+        <div id="book-entity" style="display: flex; width: 960px; height: 600px; background: #ebdcc5; box-shadow: 0 20px 45px rgba(0,0,0,0.7); border-radius: 2px; position: relative; box-sizing: border-box; transition: all 0.8s ease;">
+            
+            <div style="width: 50%; height: 100%; display: flex; justify-content: center; align-items: center; padding: 60px; box-sizing: border-box; position: relative;">
+                <div class="vertical-text" style="writing-mode: vertical-rl; font-family: 'KaiTi', '楷体', serif; font-size: 20px; color: #2c2523; line-height: 2.3; letter-spacing: 5px; height: 85%;">
+                    都道是金玉良姻，俺只念木石前盟。<br>
+                    空对着，山中高士晶莹雪；终不忘，<br>
+                    世外仙姝寂寞林。叹人间，美中不足<br>
+                    今方信。纵然是齐眉举案，到底意难<br>
+                    平。任凭那热毒侵骨，金锁沉重，她只<br>
+                    用一味冷香，锁住了一生的端庄与随顺...
+                </div>
+            </div>
+
+            <div style="position: absolute; left: 50%; top: 0; width: 2px; height: 100%; background: rgba(0,0,0,0.06); box-shadow: 0 0 8px rgba(0,0,0,0.15); z-index: 5; transform: translateX(-50%);"></div>
+
+            <div style="width: 50%; height: 100%; display: flex; justify-content: center; align-items: center; padding: 60px; box-sizing: border-box; position: relative;">
+                <div id="baochai-sketch-btn" style="cursor: pointer; text-align: center; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <img src="../image/baochai_sketch.png" alt="薛宝钗线稿" style="max-width: 85%; max-height: 80%; object-fit: contain;">
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="awakening-stage" class="chinese-desk-stage">
+        <div class="lock-container" id="gold-lock">
+            <div class="ritual-circle"></div>
+
+            <div class="lock-sketch" id="lock-sketch">
+                <img src="../image/baochai_sketch.png" alt="未唤醒线稿" class="awakening-img-sketch">
+                <span class="sketch-text">触碰金锁 注入灵魂</span>
+            </div>
+            
+            <div class="lock-colored" id="lock-colored">
+                <svg width="100%" height="100%" viewBox="0 0 380 540" class="mask-svg-container">
+                    <defs>
+                        <mask id="center-spread-mask" maskUnits="userSpaceOnUse">
+                            <circle id="mask-circle" cx="190" cy="270" r="0" fill="white" />
+                        </mask>
+                    </defs>
+                    <image href="../image/baochai_full_color.png" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" mask="url(#center-spread-mask)"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div id="scene-stage">
+        <div id="viewport">
+            <div id="scroll-container" style="position: relative;">
+                <div class="layer layer-video">
+                    <video id="scene-video" src="../image/baochai_book.mp4" autoplay loop muted></video>
+                </div>
+
+                <div id="glow-tea" class="local-glow-element glow-cold-tea"></div>
+                <div id="glow-book" class="local-glow-element glow-poetry-book"></div>
+                <div id="glow-baochai" class="local-glow-element glow-character-baochai"></div>
+
+                <div id="prop-baochai" class="interactive-element person-hotspot" style="display: none !important;"></div>
+
+                <div id="prop-tea" class="interactive-element props" style="display: none !important;">冷香丸茶</div>
+                <div id="prop-books" class="interactive-element props" style="display: none !important;">案头诗集</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="story-stage">
+        <img id="story-bg" src="../image/baichai_juqing.jpg" alt="剧情演绎背景图">
+
+        <div id="dialogue-box">
+            <div id="dialogue-name">薛宝钗</div>
+            <div id="dialogue-text">正在初始化剧情...</div>
+            
+            <div id="dialogue-next-btn">
+                <span>▼</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="catch-butterfly-stage">
+        <img id="garden-bg" src="../image/baochai_butterfly.png" alt="大观园花圃">
+        
+        <div id="butterfly-container"></div>
+
+        <div id="catch-toast-ui">
+            <div id="toast-title">画面浮现</div>
+            <div id="toast-content">正在走近西边花圃...</div>
+        </div>
+    </div>
+
+    <div id="curtain-call-stage">
+        <div class="curtain-text">是的，属于薛宝钗的执念、金锁的记忆，到这里就真正落下了帷幕。</div>
+        <div class="curtain-choice-wrap">
+            <button id="story-recap-btn" class="curtain-choice-btn">剧情回顾</button>
+            <button id="enter-dagwanyuan-btn" class="curtain-choice-btn">进入大观园全景 ➔</button>
+        </div>
+    </div>
+
+    <div id="fog-overlay">
+        <svg width="100%" height="100%" style="position:absolute; top:0; left:0;">
+            <defs>
+                <filter id="true-fog-filter" x="-20%" y="-20%" width="140%" height="140%">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="4" result="noise" />
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="120" xChannelSelector="R" yChannelSelector="G" />
+                </filter>
+            </defs>
+        </svg>
+        <div class="true-fog-shroud mist-layer-1"></div>
+        <div class="true-fog-shroud mist-layer-2"></div>
+        <div class="true-fog-shroud mist-layer-3"></div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
